@@ -1305,42 +1305,110 @@ class DartConnectScraper:
         """Extract player names from recap page"""
         player_names = []
         
-        # Try common selectors for player names
-        name_selectors = [
-            {'class': 'player-name'},
-            {'class': 'playerName'},
-            {'class': 'participant'},
-        ]
+        # Try multiple methods to extract player names from DartConnect recap pages
         
-        for selector in name_selectors:
-            elements = soup.find_all(attrs=selector)
-            if elements:
-                player_names = [elem.get_text(strip=True) for elem in elements[:2]]
-                break
+        # Method 1: Look for table headers with player info
+        table = soup.find('table')
+        if table:
+            # Find all td elements that might contain player names
+            # DartConnect typically has player names in the first row
+            first_row = table.find('tr')
+            if first_row:
+                cells = first_row.find_all('td')
+                # Usually player names are in cells that are not the first (which is often a label)
+                for cell in cells:
+                    text = cell.get_text(strip=True)
+                    # Skip empty cells, numbers, and common labels
+                    if text and not text.isdigit() and text.lower() not in ['player', 'legs', 'sets', 'avg']:
+                        if len(player_names) < 2:  # Only get first 2 player names
+                            player_names.append(text)
         
+        # Method 2: Look for h2 or h3 tags that often contain player names
+        if len(player_names) < 2:
+            headers = soup.find_all(['h2', 'h3'])
+            for header in headers:
+                text = header.get_text(strip=True)
+                if text and len(text) > 2 and len(text) < 50:  # Reasonable name length
+                    if len(player_names) < 2:
+                        player_names.append(text)
+        
+        # Method 3: Try the original selectors
+        if len(player_names) < 2:
+            name_selectors = [
+                {'class': 'player-name'},
+                {'class': 'playerName'},
+                {'class': 'participant'},
+            ]
+            
+            for selector in name_selectors:
+                elements = soup.find_all(attrs=selector)
+                if elements:
+                    player_names = [elem.get_text(strip=True) for elem in elements[:2]]
+                    break
+        
+        self.logger.info(f"Extracted player names: {player_names}")
         return player_names
 
     def _extract_match_scores(self, soup: BeautifulSoup) -> List[int]:
         """Extract match scores from recap page"""
         scores = []
         
-        # Try common selectors for scores
-        score_selectors = [
-            {'class': 'score'},
-            {'class': 'match-score'},
-            {'class': 'legs-won'},
-        ]
+        # Method 1: Look for score in table - DartConnect typically shows final score
+        table = soup.find('table')
+        if table:
+            # Look for rows with "Legs" or numbers
+            rows = table.find_all('tr')
+            for row in rows:
+                cells = row.find_all('td')
+                row_text = ' '.join([c.get_text(strip=True) for c in cells]).lower()
+                
+                # If this row contains score-like data
+                if 'legs' in row_text or 'sets' in row_text:
+                    # Next row or cells might have the scores
+                    for cell in cells:
+                        text = cell.get_text(strip=True)
+                        if text.isdigit():
+                            try:
+                                score = int(text)
+                                if score < 100:  # Reasonable score range
+                                    scores.append(score)
+                                    if len(scores) == 2:
+                                        break
+                            except ValueError:
+                                continue
+                if len(scores) == 2:
+                    break
         
-        for selector in score_selectors:
-            elements = soup.find_all(attrs=selector)
-            if elements:
-                for elem in elements[:2]:
-                    try:
-                        scores.append(int(elem.get_text(strip=True)))
-                    except ValueError:
-                        continue
-                break
+        # Method 2: Look for final score pattern (e.g., "5-3" or "6 - 4")
+        if len(scores) < 2:
+            page_text = soup.get_text()
+            # Look for patterns like "5-3", "6 - 4", etc.
+            score_pattern = re.search(r'(\d+)\s*[-:]\s*(\d+)', page_text)
+            if score_pattern:
+                try:
+                    scores = [int(score_pattern.group(1)), int(score_pattern.group(2))]
+                except ValueError:
+                    pass
         
+        # Method 3: Try original selectors
+        if len(scores) < 2:
+            score_selectors = [
+                {'class': 'score'},
+                {'class': 'match-score'},
+                {'class': 'legs-won'},
+            ]
+            
+            for selector in score_selectors:
+                elements = soup.find_all(attrs=selector)
+                if elements:
+                    for elem in elements[:2]:
+                        try:
+                            scores.append(int(elem.get_text(strip=True)))
+                        except ValueError:
+                            continue
+                    break
+        
+        self.logger.info(f"Extracted scores: {scores}")
         return scores
 
     def _classify_match_by_index(self, match_index: int) -> Tuple[str, Optional[str]]:
