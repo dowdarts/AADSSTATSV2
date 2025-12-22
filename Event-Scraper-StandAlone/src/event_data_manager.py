@@ -131,14 +131,19 @@ class EventDataManager:
         # 3. Save matches as CSV
         csv_file = os.path.join(csv_dir, f"matches_{timestamp}.csv")
         with open(csv_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['match_number', 'match_type', 'url', 'title', 'status', 'scraped_at'])
+            writer = csv.DictWriter(f, fieldnames=['match_number', 'match_type', 'phase', 'group_name', 'url', 'title', 'status', 'scraped_at'])
             writer.writeheader()
             for idx, match in enumerate(all_matches, 1):
-                # Determine match type based on position (first 20 = Round Robin, rest = Knockout)
-                match_type = 'Round Robin' if idx <= 20 else 'Knockout'
+                # Use match data from scraper if available, otherwise fallback to old logic
+                match_type = match.get('match_type', 'Round Robin' if idx <= 20 else 'Knockout')
+                phase = match.get('phase', 'round_robin' if idx <= 20 else 'quarterfinal')
+                group_name = match.get('group_name', '')
+                
                 writer.writerow({
-                    'match_number': idx,
+                    'match_number': match.get('match_number', idx),
                     'match_type': match_type,
+                    'phase': phase,
+                    'group_name': group_name if group_name else '',
                     'url': match['url'],
                     'title': match['title'],
                     'status': 'pending',

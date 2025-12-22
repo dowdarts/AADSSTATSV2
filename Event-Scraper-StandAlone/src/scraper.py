@@ -273,16 +273,47 @@ class DartConnectScraper:
                                     home_name = match.get('hc') or match.get('hcf') or (match.get('home_player', {}).get('name') if isinstance(match.get('home_player'), dict) else None)
                                     away_name = match.get('ac') or match.get('acf') or (match.get('away_player', {}).get('name') if isinstance(match.get('away_player'), dict) else None)
                                     
-                                    # Get event label (Round Robin, Winners Knockout, etc.)
-                                    event_label = match.get('el') or match.get('event_label')
+                                    # Determine match type, phase, and group based on position
+                                    # AADS Tournament Structure:
+                                    # Match 1: Final
+                                    # Match 2-3: Semifinals
+                                    # Match 4-7: Quarterfinals
+                                    # Match 8-17: Group A Round Robin (10 matches)
+                                    # Match 18-27: Group B Round Robin (10 matches)
                                     
-                                    # Determine match type based on position
-                                    # First 20 matches are Round Robin, rest are Knockout
-                                    match_type = 'Round Robin' if match_counter <= 20 else 'Knockout'
-                                    if not event_label:
-                                        event_label = match_type
+                                    if match_counter == 1:
+                                        match_type = 'Knockout'
+                                        phase = 'final'
+                                        group_name = None
+                                        phase_label = 'Final'
+                                    elif match_counter <= 3:
+                                        match_type = 'Knockout'
+                                        phase = 'semifinal'
+                                        group_name = None
+                                        phase_label = 'Semifinal'
+                                    elif match_counter <= 7:
+                                        match_type = 'Knockout'
+                                        phase = 'quarterfinal'
+                                        group_name = None
+                                        phase_label = 'Quarterfinal'
+                                    elif match_counter <= 17:
+                                        match_type = 'Round Robin'
+                                        phase = 'round_robin'
+                                        group_name = 'A'
+                                        phase_label = 'Round Robin - Group A'
+                                    elif match_counter <= 27:
+                                        match_type = 'Round Robin'
+                                        phase = 'round_robin'
+                                        group_name = 'B'
+                                        phase_label = 'Round Robin - Group B'
+                                    else:
+                                        # Fallback for any extra matches
+                                        match_type = 'Round Robin'
+                                        phase = 'round_robin'
+                                        group_name = None
+                                        phase_label = 'Round Robin'
                                     
-                                    # Build informative title: "Event_1 Match 1 - Player A vs Player B (Round Robin)"
+                                    # Build informative title: "Event_1 Match 1 - Player A vs Player B (Final)"
                                     title_parts = [f"{event_id} Match {match_counter}"]
                                     
                                     # Add player names
@@ -292,8 +323,8 @@ class DartConnectScraper:
                                         player = home_name or away_name
                                         title_parts.append(f"- {player}")
                                     
-                                    # Add match type
-                                    title_parts.append(f"({event_label})")
+                                    # Add phase label
+                                    title_parts.append(f"({phase_label})")
                                     
                                     title = ' '.join(title_parts)
                                     
@@ -302,6 +333,8 @@ class DartConnectScraper:
                                         'title': title,
                                         'match_number': match_counter,
                                         'match_type': match_type,
+                                        'phase': phase,
+                                        'group_name': group_name,
                                         'home_player': home_name,
                                         'away_player': away_name
                                     })
