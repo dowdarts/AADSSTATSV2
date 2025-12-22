@@ -1248,7 +1248,9 @@
             const confirmed = confirm('Are you sure you want to discard all scraped stats?\n\nThis will clear the review table and you will need to scrape again.');
             
             if (confirmed) {
-                matchResults = [];\n                matchDetails = [];\n                stage2Stats = [];
+                matchResults = [];
+                matchDetails = [];
+                stage2Stats = [];
                 statsReviewTableBody.innerHTML = '';
                 step4Card.style.display = 'none';
                 totalMatchesReview.textContent = '0';
