@@ -1,0 +1,24 @@
+{
+  "name": "aads-stats-v2",
+  "version": "2.0.0",
+  "description": "Atlantic Amateur Darts Series - Professional Stats Platform V2",
+  "main": "public/index.html",
+  "scripts": {
+    "start": "python -m http.server 8000 --directory public",
+    "migrate": "python scripts/data_migration.py",
+    "test-logic": "python scripts/tournament_logic.py"
+  },
+  "keywords": [
+    "darts",
+    "statistics",
+    "tournament",
+    "aads",
+    "supabase"
+  ],
+  "author": "AADS Development Team",
+  "license": "MIT",
+  "dependencies": {
+    "supabase-py": "^1.0.0"
+  },
+  "devDependencies": {}
+}

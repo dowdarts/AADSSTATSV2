@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AADS Control Panel - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1a472a;
+            --secondary-color: #2d7a4f;
+            --accent-color: #ffd700;
+            --danger-color: #dc3545;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --bg-dark: #0a1f14;
+            --bg-light: #f8f9fa;
+            --text-light: #ffffff;
+            --text-dark: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--primary-color) 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(26, 71, 42, 0.95);
+            padding: 1.5rem 2rem;
+            border-bottom: 3px solid var(--accent-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: var(--accent-color);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .editable {
+            cursor: pointer;
+            position: relative;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .editable:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .editable input {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 2px solid var(--accent-color);
+            padding: 0.5rem;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+
+        .btn-primary {
+            background: var(--secondary-color);
+            color: var(--text-light);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: var(--text-light);
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: var(--text-light);
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: var(--text-dark);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: var(--warning-color);
+            color: var(--text-dark);
+        }
+
+        .status-approved {
+            background: var(--success-color);
+            color: var(--text-light);
+        }
+
+        .status-rejected {
+            background: var(--danger-color);
+            color: var(--text-light);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--primary-color);
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            border: 2px solid var(--accent-color);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .close {
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--accent-color);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--accent-color);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--text-light);
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab.active {
+            color: var(--accent-color);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+        }
+
+        .alert-danger {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">🎯 AADS CONTROL PANEL</div>
+            <div class="user-info">
+                <span id="userEmail">Admin</span>
+                <button class="btn btn-primary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="pendingCount">0</div>
+                <div class="stat-label">Pending Reviews</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="approvedToday">0</div>
+                <div class="stat-label">Approved Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalMatches">0</div>
+                <div class="stat-label">Total Matches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activePlayers">0</div>
+                <div class="stat-label">Active Players</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('staging')">Staging Queue</button>
+            <button class="tab" onclick="switchTab('matches')">Published Matches</button>
+            <button class="tab" onclick="switchTab('players')">Players</button>
+            <button class="tab" onclick="switchTab('events')">Events</button>
+        </div>
+
+        <!-- Staging Queue Tab -->
+        <div id="stagingTab" class="tab-content active">
+            <div class="section">
+                <div class="section-title">📋 Staging Queue - Pending Review</div>
+                <div id="alertContainer"></div>
+                <div class="table-container">
+                    <table id="stagingTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Event</th>
+                                <th>Phase</th>
+                                <th>Player 1</th>
+                                <th>Score</th>
+                                <th>Player 2</th>
+                                <th>Avg</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stagingBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Published Matches Tab -->
+        <div id="matchesTab" class="tab-content">
+            <div class="section">
+                <div class="section-title">✅ Published Matches</div>
+                <div class="table-container">
+                    <table id="matchesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Event</th>
+                                <th>Phase</th>
+                                <th>Player 1</th>
+                                <th>Score</th>
+                                <th>Player 2</th>
+                                <th>Winner</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matchesBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players Tab -->
+        <div id="playersTab" class="tab-content">
+            <div class="section">
+                <div class="section-title">👥 Players Management</div>
+                <button class="btn btn-primary" onclick="showAddPlayerModal()">+ Add Player</button>
+                <div class="table-container">
+                    <table id="playersTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Total Matches</th>
+                                <th>Wins</th>
+                                <th>Series 3DA</th>
+                                <th>180s</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playersBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Events Tab -->
+        <div id="eventsTab" class="tab-content">
+            <div class="section">
+                <div class="section-title">🏆 Events Management</div>
+                <button class="btn btn-primary" onclick="showAddEventModal()">+ Create Event</button>
+                <div class="table-container">
+                    <table id="eventsTable">
+                        <thead>
+                            <tr>
+                                <th>Event #</th>
+                                <th>Name</th>
+                                <th>Date</th>
+                                <th>Venue</th>
+                                <th>Status</th>
+                                <th>Winner</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Edit Match</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalBody">
+                <!-- Dynamic form content -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://yppxkvbmffcvdxuswsbf.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_U9kl9y_4_VOJyN8Mij6jnQ_A4Ilgziq';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentEditingRow = null;
+
+        // Initialize
+        async function init() {
+            await loadStats();
+            await loadStagingData();
+            await loadMatches();
+            await loadPlayers();
+            await loadEvents();
+        }
+
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // Load Statistics
+        async function loadStats() {
+            try {
+                const { data: staging } = await supabase
+                    .from('staging_matches')
+                    .select('*', { count: 'exact' })
+                    .eq('status', 'pending');
+                
+                const { data: matches } = await supabase
+                    .from('matches')
+                    .select('*', { count: 'exact' });
+                
+                const { data: players } = await supabase
+                    .from('players')
+                    .select('*', { count: 'exact' })
+                    .eq('is_active', true);
+
+                document.getElementById('pendingCount').textContent = staging?.length || 0;
+                document.getElementById('totalMatches').textContent = matches?.length || 0;
+                document.getElementById('activePlayers').textContent = players?.length || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load Staging Data
+        async function loadStagingData() {
+            try {
+                const { data, error } = await supabase
+                    .from('staging_matches')
+                    .select(`
+                        *,
+                        events (event_name, event_number)
+                    `)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('stagingBody');
+                tbody.innerHTML = data.map(match => `
+                    <tr data-id="${match.id}">
+                        <td>${new Date(match.created_at).toLocaleDateString()}</td>
+                        <td>Event ${match.events?.event_number || '-'}</td>
+                        <td>${formatPhase(match.phase)}</td>
+                        <td class="editable" onclick="editField(this, '${match.id}', 'player_1_name')">${match.player_1_name || '-'}</td>
+                        <td class="editable" onclick="editField(this, '${match.id}', 'player_1_legs')">${match.player_1_legs || 0} - ${match.player_2_legs || 0}</td>
+                        <td class="editable" onclick="editField(this, '${match.id}', 'player_2_name')">${match.player_2_name || '-'}</td>
+                        <td>${match.player_1_average || '-'} / ${match.player_2_average || '-'}</td>
+                        <td><span class="status-badge status-${match.status}">${match.status}</span></td>
+                        <td class="action-buttons">
+                            <button class="btn btn-success" onclick="approveMatch('${match.id}')">✓ Approve</button>
+                            <button class="btn btn-danger" onclick="rejectMatch('${match.id}')">✗ Reject</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading staging data:', error);
+                showAlert('Error loading staging data', 'danger');
+            }
+        }
+
+        // Load Published Matches
+        async function loadMatches() {
+            try {
+                const { data, error } = await supabase
+                    .from('matches')
+                    .select(`
+                        *,
+                        events (event_name, event_number),
+                        player_1:players!matches_player_1_id_fkey (name),
+                        player_2:players!matches_player_2_id_fkey (name),
+                        winner:players!matches_winner_id_fkey (name)
+                    `)
+                    .order('match_date', { ascending: false });
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('matchesBody');
+                tbody.innerHTML = data.map(match => `
+                    <tr>
+                        <td>${new Date(match.match_date).toLocaleDateString()}</td>
+                        <td>Event ${match.events?.event_number || '-'}</td>
+                        <td>${formatPhase(match.phase)}</td>
+                        <td>${match.player_1?.name || '-'}</td>
+                        <td>${match.player_1_legs} - ${match.player_2_legs}</td>
+                        <td>${match.player_2?.name || '-'}</td>
+                        <td>${match.winner?.name || '-'}</td>
+                        <td>
+                            <button class="btn btn-warning" onclick="editMatch('${match.id}')">Edit</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading matches:', error);
+            }
+        }
+
+        // Load Players
+        async function loadPlayers() {
+            try {
+                const { data, error } = await supabase
+                    .from('players')
+                    .select('*')
+                    .order('name');
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('playersBody');
+                tbody.innerHTML = data.map(player => `
+                    <tr>
+                        <td>${player.name}</td>
+                        <td>${player.series_total_matches}</td>
+                        <td>${player.series_total_wins}</td>
+                        <td>${player.series_average_3da?.toFixed(2) || '0.00'}</td>
+                        <td>${player.series_180s}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="viewPlayerDetails('${player.id}')">View</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading players:', error);
+            }
+        }
+
+        // Load Events
+        async function loadEvents() {
+            try {
+                const { data, error } = await supabase
+                    .from('events')
+                    .select(`
+                        *,
+                        winner:players (name)
+                    `)
+                    .order('event_number');
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('eventsBody');
+                tbody.innerHTML = data.map(event => `
+                    <tr>
+                        <td>${event.event_number}</td>
+                        <td>${event.event_name}</td>
+                        <td>${new Date(event.event_date).toLocaleDateString()}</td>
+                        <td>${event.venue || '-'}</td>
+                        <td><span class="status-badge status-${event.status}">${event.status}</span></td>
+                        <td>${event.winner?.name || '-'}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="editEvent('${event.id}')">Edit</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+
+        // Inline Field Editing
+        function editField(element, matchId, fieldName) {
+            const currentValue = element.textContent;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            input.onblur = () => saveField(element, matchId, fieldName, input.value);
+            input.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    input.blur();
+                }
+            };
+            element.textContent = '';
+            element.appendChild(input);
+            input.focus();
+        }
+
+        async function saveField(element, matchId, fieldName, value) {
+            try {
+                const { error } = await supabase
+                    .from('staging_matches')
+                    .update({ [fieldName]: value })
+                    .eq('id', matchId);
+
+                if (error) throw error;
+
+                element.textContent = value;
+                showAlert('Field updated successfully', 'success');
+            } catch (error) {
+                console.error('Error saving field:', error);
+                showAlert('Error saving field', 'danger');
+            }
+        }
+
+        // Approve Match
+        async function approveMatch(matchId) {
+            if (!confirm('Approve this match and push to production?')) return;
+
+            try {
+                // Get staging match data
+                const { data: stagingMatch, error: fetchError } = await supabase
+                    .from('staging_matches')
+                    .select('*')
+                    .eq('id', matchId)
+                    .single();
+
+                if (fetchError) throw fetchError;
+
+                // Create or get player IDs
+                const player1Id = await getOrCreatePlayer(stagingMatch.player_1_name);
+                const player2Id = await getOrCreatePlayer(stagingMatch.player_2_name);
+
+                // Determine winner
+                const winnerId = stagingMatch.player_1_legs > stagingMatch.player_2_legs ? player1Id : player2Id;
+
+                // Insert into matches table
+                const { error: insertError } = await supabase
+                    .from('matches')
+                    .insert({
+                        event_id: stagingMatch.event_id,
+                        phase: stagingMatch.phase,
+                        group_name: stagingMatch.group_name,
+                        match_number: stagingMatch.match_number,
+                        player_1_id: player1Id,
+                        player_2_id: player2Id,
+                        player_1_legs: stagingMatch.player_1_legs,
+                        player_2_legs: stagingMatch.player_2_legs,
+                        player_1_average: stagingMatch.player_1_average,
+                        player_2_average: stagingMatch.player_2_average,
+                        player_1_highest_checkout: stagingMatch.player_1_highest_checkout,
+                        player_2_highest_checkout: stagingMatch.player_2_highest_checkout,
+                        player_1_180s: stagingMatch.player_1_180s,
+                        player_2_180s: stagingMatch.player_2_180s,
+                        winner_id: winnerId,
+                        match_date: stagingMatch.match_date || new Date().toISOString(),
+                        board_number: stagingMatch.board_number
+                    });
+
+                if (insertError) throw insertError;
+
+                // Update staging match status
+                await supabase
+                    .from('staging_matches')
+                    .update({ 
+                        status: 'approved',
+                        reviewed_at: new Date().toISOString()
+                    })
+                    .eq('id', matchId);
+
+                showAlert('Match approved and published!', 'success');
+                await loadStagingData();
+                await loadStats();
+            } catch (error) {
+                console.error('Error approving match:', error);
+                showAlert('Error approving match: ' + error.message, 'danger');
+            }
+        }
+
+        // Reject Match
+        async function rejectMatch(matchId) {
+            const reason = prompt('Enter rejection reason (optional):');
+            
+            try {
+                const { error } = await supabase
+                    .from('staging_matches')
+                    .update({ 
+                        status: 'rejected',
+                        review_notes: reason,
+                        reviewed_at: new Date().toISOString()
+                    })
+                    .eq('id', matchId);
+
+                if (error) throw error;
+
+                showAlert('Match rejected', 'success');
+                await loadStagingData();
+                await loadStats();
+            } catch (error) {
+                console.error('Error rejecting match:', error);
+                showAlert('Error rejecting match', 'danger');
+            }
+        }
+
+        // Helper: Get or Create Player
+        async function getOrCreatePlayer(playerName) {
+            if (!playerName) return null;
+
+            // Try to find existing player
+            const { data: existing } = await supabase
+                .from('players')
+                .select('id')
+                .eq('name', playerName)
+                .single();
+
+            if (existing) return existing.id;
+
+            // Create new player
+            const { data: newPlayer, error } = await supabase
+                .from('players')
+                .insert({ name: playerName })
+                .select('id')
+                .single();
+
+            if (error) throw error;
+            return newPlayer.id;
+        }
+
+        // Show Alert
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Format Phase
+        function formatPhase(phase) {
+            const phases = {
+                'round_robin': 'Round Robin',
+                'quarterfinal': 'Quarter Final',
+                'semifinal': 'Semi Final',
+                'final': 'Final'
+            };
+            return phases[phase] || phase;
+        }
+
+        // Modal Functions
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function showAddPlayerModal() {
+            // Implementation for adding players
+            alert('Add Player modal - To be implemented');
+        }
+
+        function showAddEventModal() {
+            // Implementation for adding events
+            alert('Add Event modal - To be implemented');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

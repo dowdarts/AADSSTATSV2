@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AADS Event Scraper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #e94560;
+        }
+
+        .subtitle {
+            color: #a8a8a8;
+            font-size: 1.1em;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            background: #e94560;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-right: 15px;
+        }
+
+        .step-title {
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a8a8a8;
+            font-size: 0.9em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #e94560;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button:hover:not(:disabled) {
+            background: #d63651;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .matches-list {
+            margin-top: 20px;
+        }
+
+        .match-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .match-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #e94560;
+        }
+
+        .match-info {
+            flex: 1;
+        }
+
+        .match-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .match-url {
+            font-size: 0.85em;
+            color: #a8a8a8;
+            word-break: break-all;
+        }
+
+        .match-status {
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .status-scraping {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196f3;
+        }
+
+        .status-success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+        }
+
+        .status-error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #f27121);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: rgba(233, 69, 96, 0.1);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        .stat-label {
+            color: #a8a8a8;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .log-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-time {
+            color: #a8a8a8;
+        }
+
+        .log-info {
+            color: #2196f3;
+        }
+
+        .log-success {
+            color: #4caf50;
+        }
+
+        .log-error {
+            color: #f44336;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AADS Event Scraper</h1>
+            <p class="subtitle">Automated match data extraction from DartConnect events</p>
+        </header>
+
+        <!-- Server Status Alert -->
+        <div id="serverAlert" class="card" style="display: none; background: #2a1a1a; border-color: #FF6B00;">
+            <h3 style="color: #FF6B00; margin-bottom: 10px;">🖥️ Server Not Running</h3>
+            <p>The scraper requires a local Python server. Download and start it to continue.</p>
+            <button onclick="downloadServerPackage()" style="margin-top: 10px;">📥 Download Server Package</button>
+            <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;">
+                <strong>Quick Start:</strong><br>
+                1. Download server files<br>
+                2. Run: <code style="background: #000; padding: 2px 6px;">pip install -r requirements.txt</code><br>
+                3. Run: <code style="background: #000; padding: 2px 6px;">python api_server.py</code><br>
+                4. Refresh this page
+            </div>
+        </div>
+
+        <!-- Step 1: Find Matches -->
+        <div class="card" id="step1Card">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <div class="step-title">Find Matches from Event</div>
+            </div>
+
+            <div class="input-group">
+                <label for="eventUrl">Event URL from DartConnect</label>
+                <input 
+                    type="text" 
+                    id="eventUrl" 
+                    placeholder="https://tv.dartconnect.com/eventmenu/mt_joe6163l_1"
+                    value="https://tv.dartconnect.com/eventmenu/mt_joe6163l_1"
+                >
+            </div>
+
+            <div class="button-group">
+                <button id="findMatchesBtn">
+                    <span>🔍</span>
+                    <span>Find Matches</span>
+                </button>
+                <button id="uploadStage1Btn" style="background: #2196f3;">
+                    <span>📤</span>
+                    <span>Upload Stage 1 Data</span>
+                </button>
+                <input type="file" id="stage1FileInput" accept=".json" style="display: none;">
+            </div>
+
+            <div id="findMatchesLoading" class="hidden" style="margin-top: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="spinner"></div>
+                    <span>Scanning event page for matches...</span>
+                </div>
+            </div>
+            
+            <button id="downloadStage1Btn" class="hidden" style="background: #4caf50; margin-top: 20px;">
+                <span>💾</span>
+                <span>Download Stage 1 Data</span>
+            </button>
+        </div>
+
+        <!-- Step 2: Scrape Match Stats -->
+        <div class="card" id="step2Card" style="display: none;">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <div class="step-title">Scrape Match Statistics</div>
+            </div>
+
+            <div class="stats-summary">
+                <div class="stat-box">
+                    <div class="stat-value" id="matchesFound">0</div>
+                    <div class="stat-label">Matches Found</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="matchesScraped">0</div>
+                    <div class="stat-label">Matches Scraped</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="playersAdded">0</div>
+                    <div class="stat-label">Players Added</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%;">
+                    <span id="progressText">0%</span>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="scrapeAllBtn">
+                    <span>⚡</span>
+                    <span>Scrape All Stats</span>
+                </button>
+                <button id="uploadStage2Btn" style="background: #2196f3;">
+                    <span>📤</span>
+                    <span>Upload Stage 2 Data</span>
+                </button>
+                <input type="file" id="stage2FileInput" accept=".json" style="display: none;">
+                <button id="downloadStage2Btn" class="hidden" style="background: #4caf50;">
+                    <span>💾</span>
+                    <span>Download Stage 2 Stats</span>
+                </button>
+                <button id="resetBtn" style="background: #555;">
+                    <span>🔄</span>
+                    <span>Reset</span>
+                </button>
+            </div>
+
+            <div class="matches-list" id="matchesList"></div>
+
+            <div class="log-container" id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let foundMatches = [];
+        let currentEventId = '';
+
+        // DOM Elements
+        const eventUrlInput = document.getElementById('eventUrl');
+        const findMatchesBtn = document.getElementById('findMatchesBtn');
+        const findMatchesLoading = document.getElementById('findMatchesLoading');
+        const step2Card = document.getElementById('step2Card');
+        const matchesList = document.getElementById('matchesList');
+        const scrapeAllBtn = document.getElementById('scrapeAllBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const matchesFoundEl = document.getElementById('matchesFound');
+        const matchesScrapedEl = document.getElementById('matchesScraped');
+        const playersAddedEl = document.getElementById('playersAdded');
+        const logContainer = document.getElementById('logContainer');
+        
+        // Upload/Download buttons
+        const uploadStage1Btn = document.getElementById('uploadStage1Btn');
+        const stage1FileInput = document.getElementById('stage1FileInput');
+        const downloadStage1Btn = document.getElementById('downloadStage1Btn');
+        const uploadStage2Btn = document.getElementById('uploadStage2Btn');
+        const stage2FileInput = document.getElementById('stage2FileInput');
+        const downloadStage2Btn = document.getElementById('downloadStage2Btn');
+        
+        // Stage 2 stats storage
+        let stage2Stats = [];
+
+        // Check server on load
+        window.addEventListener('DOMContentLoaded', checkServerStatus);
+
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('http://localhost:5000/admin/health');
+                if (!response.ok) throw new Error('Server not running');
+                document.getElementById('serverAlert').style.display = 'none';
+                document.getElementById('step1Card').style.opacity = '1';
+            } catch (error) {
+                document.getElementById('serverAlert').style.display = 'block';
+                document.getElementById('step1Card').style.opacity = '0.5';
+            }
+        }
+
+        async function downloadServerPackage() {
+            const files = [
+                { name: 'api_server.py', url: 'https://raw.githubusercontent.com/dartstream1800-collab/aads-stats-display/main/api_server.py' },
+                { name: 'scraper.py', url: 'https://raw.githubusercontent.com/dartstream1800-collab/aads-stats-display/main/scraper.py' },
+                { name: 'database_manager.py', url: 'https://raw.githubusercontent.com/dartstream1800-collab/aads-stats-display/main/database_manager.py' }
+            ];
+            
+            const requirements = 'flask>=3.0.0\nflask-cors>=4.0.0\nbeautifulsoup4>=4.12.0\nselenium>=4.15.0\nrequests>=2.31.0';
+            
+            for (const file of files) {
+                const a = document.createElement('a');
+                a.href = file.url;
+                a.download = file.name;
+                a.click();
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            const blob = new Blob([requirements], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'requirements.txt';
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            alert('✅ Server files downloaded! Follow the instructions in the box above to start the server.');
+        }
+
+        // Event Listeners
+        findMatchesBtn.addEventListener('click', findMatches);
+        scrapeAllBtn.addEventListener('click', scrapeAllMatches);
+        resetBtn.addEventListener('click', reset);
+        
+        // Upload/Download event listeners
+        uploadStage1Btn.addEventListener('click', () => stage1FileInput.click());
+        stage1FileInput.addEventListener('change', handleStage1Upload);
+        downloadStage1Btn.addEventListener('click', downloadStage1Data);
+        
+        uploadStage2Btn.addEventListener('click', () => stage2FileInput.click());
+        stage2FileInput.addEventListener('change', handleStage2Upload);
+        downloadStage2Btn.addEventListener('click', downloadStage2Data);
+
+        async function findMatches() {
+            const eventUrl = eventUrlInput.value.trim();
+            
+            if (!eventUrl) {
+                alert('Please enter an event URL');
+                return;
+            }
+
+            findMatchesBtn.disabled = true;
+            findMatchesLoading.classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`${API_BASE}/scrape_event`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event_url: eventUrl })
+                });
+
+                const data = await response.json();
+                
+                // Display detailed progress log if available
+                if (data.progress_log && Array.isArray(data.progress_log)) {
+                    data.progress_log.forEach(msg => {
+                        // Determine log type based on message content
+                        let logType = 'info';
+                        if (msg.includes('✓') || msg.includes('Complete')) {
+                            logType = 'success';
+                        } else if (msg.includes('✗') || msg.includes('ERROR')) {
+                            logType = 'error';
+                        }
+                        addLog(msg, logType);
+                    });
+                }
+
+                if (data.success) {
+                    foundMatches = data.matches;
+                    currentEventId = data.event_id;
+                    
+                    matchesFoundEl.textContent = foundMatches.length;
+                    displayMatches();
+                    step2Card.style.display = 'block';
+                    
+                    // Show download button for Stage 1 data
+                    downloadStage1Btn.classList.remove('hidden');
+                    
+                    addLog(`Found ${foundMatches.length} matches in event ${currentEventId}`, 'success');
+                    
+                    // Check for duplicate event
+                    if (data.is_duplicate_event) {
+                        addLog(`⚠️ Event ${currentEventId} was previously scraped. Duplicate detection active.`, 'info');
+                    }
+                    
+                    // Show match breakdown
+                    const roundRobin = foundMatches.filter((m, i) => i < 20).length;
+                    const knockout = foundMatches.length - roundRobin;
+                    addLog(`Match breakdown: ${roundRobin} Round Robin, ${knockout} Knockout`, 'info');
+                    
+                    // Show save location if available
+                    if (data.saved_to) {
+                        addLog(`Saved match data to: ${data.saved_to}`, 'success');
+                        addLog(`Files saved: JSON, CSV, and match URLs list`, 'info');
+                    }
+                    
+                    // Show data summary
+                    if (data.data_summary) {
+                        const summary = data.data_summary;
+                        addLog(`Event summary - Total: ${summary.total_matches}, Pending: ${summary.pending}, Completed: ${summary.completed}`, 'info');
+                    }
+                } else {
+                    alert(`Error: ${data.error}`);
+                    addLog(`Error finding matches: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                addLog(`Network error: ${error.message}`, 'error');
+            } finally {
+                findMatchesBtn.disabled = false;
+                findMatchesLoading.classList.add('hidden');
+            }
+        }
+
+        function displayMatches() {
+            matchesList.innerHTML = '';
+            
+            foundMatches.forEach((match, index) => {
+                const matchDiv = document.createElement('div');
+                matchDiv.className = 'match-item';
+                matchDiv.id = `match-${index}`;
+                
+                // Determine match type and add badge
+                const matchNum = match.match_number || (index + 1);
+                const matchType = match.match_type || (matchNum <= 20 ? 'Round Robin' : 'Knockout');
+                const typeBadge = matchType === 'Round Robin' ? 
+                    '<span style="background: #2196f3; padding: 2px 8px; border-radius: 4px; font-size: 0.8em;">RR</span>' :
+                    '<span style="background: #ff9800; padding: 2px 8px; border-radius: 4px; font-size: 0.8em;">KO</span>';
+                
+                matchDiv.innerHTML = `
+                    <div class="match-info">
+                        <div class="match-title">
+                            ${typeBadge}
+                            <strong>#${matchNum}</strong> ${match.title || `Match ${matchNum}`}
+                        </div>
+                        <div class="match-url">${match.url}</div>
+                    </div>
+                    <div class="match-status status-pending" id="status-${index}">Pending</div>
+                `;
+                
+                matchesList.appendChild(matchDiv);
+            });
+        }
+
+        async function scrapeAllMatches() {
+            if (foundMatches.length === 0) {
+                alert('No matches to scrape');
+                return;
+            }
+
+            scrapeAllBtn.disabled = true;
+            findMatchesBtn.disabled = true;
+            
+            let scraped = 0;
+            let totalPlayers = 0;
+
+            addLog(`Starting batch scrape of ${foundMatches.length} matches with 200ms delay...`, 'info');
+
+            for (let i = 0; i < foundMatches.length; i++) {
+                const match = foundMatches[i];
+                const statusEl = document.getElementById(`status-${i}`);
+                
+                // Update status to scraping
+                statusEl.textContent = 'Scraping...';
+                statusEl.className = 'match-status status-scraping';
+                
+                try {
+                    const response = await fetch(`${API_BASE}/scrape_recap`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            recap_url: match.url,
+                            event_id: currentEventId
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        scraped++;
+                        totalPlayers += data.players_added;
+                        
+                        // Save to stage2Stats for download
+                        stage2Stats.push({
+                            match_url: match.url,
+                            match_title: match.title,
+                            players_added: data.players_added,
+                            players: data.players || [],
+                            scraped_at: new Date().toISOString()
+                        });
+                        
+                        statusEl.textContent = `✓ ${data.players_added} players`;
+                        statusEl.className = 'match-status status-success';
+                        
+                        addLog(`Match ${i + 1}/${foundMatches.length}: ${data.message}`, 'success');
+                    } else {
+                        statusEl.textContent = '✗ Failed';
+                        statusEl.className = 'match-status status-error';
+                        
+                        addLog(`Match ${i + 1}/${foundMatches.length}: ${data.error}`, 'error');
+                    }
+                } catch (error) {
+                    statusEl.textContent = '✗ Error';
+                    statusEl.className = 'match-status status-error';
+                    
+                    addLog(`Match ${i + 1}/${foundMatches.length}: Network error`, 'error');
+                }
+
+                // Update progress
+                const progress = ((i + 1) / foundMatches.length) * 100;
+                progressFill.style.width = `${progress}%`;
+                progressText.textContent = `${Math.round(progress)}%`;
+                
+                matchesScrapedEl.textContent = scraped;
+                playersAddedEl.textContent = totalPlayers;
+
+                // Wait 200ms between requests (except for the last one)
+                if (i < foundMatches.length - 1) {
+                    await sleep(200);
+                }
+            }
+
+            addLog(`Batch scrape complete: ${scraped}/${foundMatches.length} matches, ${totalPlayers} players added`, 'success');
+            
+            // Show download button for Stage 2 data
+            if (stage2Stats.length > 0) {
+                downloadStage2Btn.classList.remove('hidden');
+                addLog('Stage 2 data ready for download', 'info');
+            }
+            
+            scrapeAllBtn.disabled = false;
+            findMatchesBtn.disabled = false;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function addLog(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            const time = new Date().toLocaleTimeString();
+            const colorClass = `log-${type}`;
+            
+            logEntry.innerHTML = `
+                <span class="log-time">[${time}]</span>
+                <span class="${colorClass}"> ${message}</span>
+            `;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function reset() {
+            foundMatches = [];
+            currentEventId = '';
+            stage2Stats = [];
+            step2Card.style.display = 'none';
+            matchesList.innerHTML = '';
+            logContainer.innerHTML = '';
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+            matchesFoundEl.textContent = '0';
+            matchesScrapedEl.textContent = '0';
+            playersAddedEl.textContent = '0';
+            downloadStage1Btn.classList.add('hidden');
+            downloadStage2Btn.classList.add('hidden');
+            
+            addLog('Reset complete', 'info');
+        }
+        
+        // ========== STAGE 1 DOWNLOAD/UPLOAD ==========
+        
+        function downloadStage1Data() {
+            if (foundMatches.length === 0) {
+                alert('No matches to download');
+                return;
+            }
+            
+            const stage1Data = {
+                version: '1.0',
+                stage: 1,
+                event_id: currentEventId,
+                timestamp: new Date().toISOString(),
+                matches: foundMatches,
+                match_count: foundMatches.length
+            };
+            
+            const blob = new Blob([JSON.stringify(stage1Data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AADS_Stage1_${currentEventId}_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            addLog('Stage 1 data downloaded successfully', 'success');
+        }
+        
+        function handleStage1Upload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Validate Stage 1 data
+                    if (data.stage !== 1) {
+                        alert('Invalid file: Not a Stage 1 data file');
+                        return;
+                    }
+                    
+                    if (!data.matches || !Array.isArray(data.matches)) {
+                        alert('Invalid file: Missing matches data');
+                        return;
+                    }
+                    
+                    // Load the data
+                    foundMatches = data.matches;
+                    currentEventId = data.event_id || 'Uploaded_Event';
+                    
+                    matchesFoundEl.textContent = foundMatches.length;
+                    displayMatches();
+                    step2Card.style.display = 'block';
+                    downloadStage1Btn.classList.remove('hidden');
+                    
+                    addLog(`Loaded ${foundMatches.length} matches from Stage 1 file`, 'success');
+                    addLog(`Event: ${currentEventId}`, 'info');
+                    
+                } catch (error) {
+                    alert('Error reading file: ' + error.message);
+                    addLog('Failed to load Stage 1 data: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+        
+        // ========== STAGE 2 DOWNLOAD/UPLOAD ==========
+        
+        function downloadStage2Data() {
+            if (stage2Stats.length === 0) {
+                alert('No stats to download. Scrape some matches first.');
+                return;
+            }
+            
+            const stage2Data = {
+                version: '1.0',
+                stage: 2,
+                event_id: currentEventId,
+                timestamp: new Date().toISOString(),
+                stats: stage2Stats,
+                total_matches: stage2Stats.length,
+                total_players: stage2Stats.reduce((sum, match) => sum + match.players.length, 0)
+            };
+            
+            const blob = new Blob([JSON.stringify(stage2Data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AADS_Stage2_${currentEventId}_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            addLog(`Stage 2 data downloaded: ${stage2Data.total_matches} matches, ${stage2Data.total_players} players`, 'success');
+        }
+        
+        function handleStage2Upload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            addLog('Loading Stage 2 file...', 'info');
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Validate Stage 2 data
+                    if (data.stage !== 2) {
+                        alert('Invalid file: Not a Stage 2 data file');
+                        return;
+                    }
+                    
+                    if (!data.stats || !Array.isArray(data.stats)) {
+                        alert('Invalid file: Missing stats data');
+                        return;
+                    }
+                    
+                    // Send to server to process
+                    addLog(`Uploading ${data.stats.length} matches to database...`, 'info');
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/upload_stage2`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            addLog(`✓ ${result.message}`, 'success');
+                            addLog(`Processed: ${result.matches_processed} matches, ${result.players_added} players`, 'success');
+                            
+                            // Update UI
+                            matchesScrapedEl.textContent = result.matches_processed;
+                            playersAddedEl.textContent = result.players_added;
+                            
+                            // Store in stage2Stats for potential re-download
+                            stage2Stats = data.stats;
+                            currentEventId = data.event_id || 'Uploaded_Event';
+                            downloadStage2Btn.classList.remove('hidden');
+                            
+                        } else {
+                            addLog(`✗ Upload failed: ${result.error}`, 'error');
+                            alert('Upload failed: ' + result.error);
+                        }
+                        
+                    } catch (uploadError) {
+                        addLog(`✗ Network error uploading to server: ${uploadError.message}`, 'error');
+                        alert('Network error: ' + uploadError.message);
+                    }
+                    
+                } catch (error) {
+                    alert('Error reading file: ' + error.message);
+                    addLog('Failed to load Stage 2 data: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+    </script>
+</body>
+</html>

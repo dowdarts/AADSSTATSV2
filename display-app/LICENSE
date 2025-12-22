@@ -1,0 +1,86 @@
+MIT License
+
+Copyright (c) 2025 Atlantic Amateur Darts Series (AADS)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Additional Terms for Logos and Branding
+
+The logos and branding assets included in the `assets/logos/` directory are 
+property of their respective owners:
+
+- AADS.com Logo - © Atlantic Amateur Darts Series
+- CGC Logos - © CGC Organization
+- CGCTV Logo - © CGC Television
+- CGC Darts Logo - © CGC Darts
+- MD Studios Logo - © MD Studios
+- DartStream Logo - © DartStream
+
+These logos are included for display purposes within the AADS Display App. 
+Usage of these logos outside of this application may require permission from 
+their respective owners.
+
+When using this software, you may replace these logos with your own branding
+by updating the files in `assets/logos/` and modifying the configuration in
+`config.js`.
+
+---
+
+## Third-Party Dependencies
+
+This software uses the following third-party libraries:
+
+### Supabase JS Client
+- License: MIT
+- URL: https://github.com/supabase/supabase-js
+- Loaded via CDN: https://unpkg.com/@supabase/supabase-js@2
+
+---
+
+## Data Attribution
+
+Statistics and match data displayed by this software are sourced from:
+
+### DartConnect
+- URL: https://dartconnect.com
+- Data is scraped and aggregated in accordance with their terms of service
+- Match recaps and statistics are publicly available data
+
+---
+
+## Fair Use and Intended Purpose
+
+This software is designed for:
+- Display of darts statistics and leaderboards
+- Broadcast overlays for streaming
+- Integration into league websites
+- Tournament organization and management
+
+The software should not be used for:
+- Unauthorized commercial exploitation of player data
+- Scraping or redistributing DartConnect data beyond personal/league use
+- Any purpose that violates the intellectual property rights of data sources
+
+---
+
+For questions about licensing or usage rights, please contact:
+Atlantic Amateur Darts Series
+https://www.aadsdarts.com

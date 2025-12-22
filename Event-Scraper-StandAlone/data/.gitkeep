@@ -1,0 +1,6 @@
+# Placeholder for event data
+# Data directory is auto-created when the application runs
+
+This directory will contain:
+- aads_master_db.json (main database)
+- event_data/ (event-specific data folders)

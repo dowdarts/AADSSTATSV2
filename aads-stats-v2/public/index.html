@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AADS Stats V2 - Atlantic Amateur Darts Series</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1a472a;
+            --secondary-color: #2d7a4f;
+            --accent-color: #ffd700;
+            --bg-dark: #0a1f14;
+            --bg-light: #f8f9fa;
+            --text-light: #ffffff;
+            --text-dark: #333333;
+            --border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--primary-color) 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+
+        /* Header Section */
+        .header {
+            background: rgba(26, 71, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem 0;
+            border-bottom: 3px solid var(--accent-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .main-title {
+            font-size: 3rem;
+            text-align: center;
+            color: var(--accent-color);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Brand/Sponsor Section */
+        .sponsors {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 1400px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .sponsor-section {
+            margin-bottom: 2rem;
+        }
+
+        .sponsor-title {
+            font-size: 1rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .sponsor-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .sponsor-logo {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .sponsor-logo:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .sponsor-logo a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Navigation */
+        .nav-container {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 0 2rem;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 2rem;
+            background: rgba(45, 122, 79, 0.3);
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            color: var(--text-light);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.active,
+        .nav-btn:hover {
+            background: var(--secondary-color);
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Section Styling */
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        /* Search Bar */
+        .search-container {
+            margin-bottom: 2rem;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .search-btn {
+            padding: 1rem 2rem;
+            background: var(--secondary-color);
+            border: none;
+            border-radius: 5px;
+            color: var(--text-light);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(45, 122, 79, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .filter-btn.active {
+            background: var(--secondary-color);
+            border-color: var(--accent-color);
+        }
+
+        /* Player Card */
+        .player-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: 2px solid var(--accent-color);
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .player-name {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .player-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+
+        /* Leaderboard Table */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: var(--accent-color);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent-color);
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        .rank {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .rank-1 { color: #FFD700; } /* Gold */
+        .rank-2 { color: #C0C0C0; } /* Silver */
+        .rank-3 { color: #CD7F32; } /* Bronze */
+
+        /* Event Standings */
+        .groups-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+        }
+
+        .group-table {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .group-title {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        /* Knockout Bracket */
+        .bracket {
+            display: flex;
+            justify-content: space-around;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .bracket-round {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-width: 250px;
+        }
+
+        .round-title {
+            text-align: center;
+            color: var(--accent-color);
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .match-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .match-card:hover {
+            border-color: var(--accent-color);
+            transform: translateX(5px);
+        }
+
+        .match-player {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .match-player.winner {
+            background: rgba(45, 122, 79, 0.5);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        /* View Toggle */
+        .view-content {
+            display: none;
+        }
+
+        .view-content.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2rem;
+            }
+            
+            .groups-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .bracket {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <h1 class="main-title">🎯 AADS STATS V2</h1>
+            <p class="subtitle">Atlantic Amateur Darts Series - Professional Statistics Platform</p>
+        </div>
+    </div>
+
+    <!-- Sponsors Section -->
+    <div class="sponsors">
+        <div class="sponsor-section">
+            <div class="sponsor-title">Presented By</div>
+            <div class="sponsor-logos">
+                <div class="sponsor-logo">
+                    <a href="https://example.com/organization" target="_blank">AADS Organization</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sponsor-section">
+            <div class="sponsor-title">Title Sponsors</div>
+            <div class="sponsor-logos">
+                <div class="sponsor-logo">
+                    <a href="https://example.com/sponsor1" target="_blank">Sponsor One</a>
+                </div>
+                <div class="sponsor-logo">
+                    <a href="https://example.com/sponsor2" target="_blank">Sponsor Two</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sponsor-section">
+            <div class="sponsor-title">Partners</div>
+            <div class="sponsor-logos">
+                <div class="sponsor-logo">
+                    <a href="https://example.com/partner1" target="_blank">Partner A</a>
+                </div>
+                <div class="sponsor-logo">
+                    <a href="https://example.com/partner2" target="_blank">Partner B</a>
+                </div>
+                <div class="sponsor-logo">
+                    <a href="https://example.com/partner3" target="_blank">Partner C</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-container">
+        <div class="nav">
+            <button class="nav-btn active" onclick="showView('leaderboard')">📊 Series Leaderboard</button>
+            <button class="nav-btn" onclick="showView('events')">🏆 Event Standings</button>
+            <button class="nav-btn" onclick="showView('players')">👥 Player Search</button>
+            <button class="nav-btn" onclick="showView('brackets')">🎯 Knockout Brackets</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Series Leaderboard View -->
+        <div id="leaderboardView" class="view-content active">
+            <div class="section">
+                <h2 class="section-title">🏅 Series Leaderboard - Overall Rankings</h2>
+                <div class="table-container">
+                    <table id="leaderboardTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Events</th>
+                                <th>Wins</th>
+                                <th>Matches</th>
+                                <th>W/L</th>
+                                <th>Leg +/-</th>
+                                <th>Series 3DA</th>
+                                <th>RR 3DA</th>
+                                <th>KO 3DA</th>
+                                <th>180s</th>
+                                <th>H/O</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Standings View -->
+        <div id="eventsView" class="view-content">
+            <div class="section">
+                <h2 class="section-title">📅 Select Event</h2>
+                <select id="eventSelect" class="search-input" style="width: auto;" onchange="loadEventStandings()">
+                    <option value="">Loading events...</option>
+                </select>
+            </div>
+
+            <div id="eventStandingsContainer" class="section" style="display: none;">
+                <h2 class="section-title" id="eventTitle">Event Standings</h2>
+                <div class="groups-container">
+                    <div class="group-table">
+                        <h3 class="group-title">Group A</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Player</th>
+                                    <th>W</th>
+                                    <th>L</th>
+                                    <th>Leg +/-</th>
+                                    <th>3DA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="groupABody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="group-table">
+                        <h3 class="group-title">Group B</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Player</th>
+                                    <th>W</th>
+                                    <th>L</th>
+                                    <th>Leg +/-</th>
+                                    <th>3DA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="groupBBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Search View -->
+        <div id="playersView" class="view-content">
+            <div class="section">
+                <h2 class="section-title">🔍 Player Search</h2>
+                <div class="search-container">
+                    <div class="search-bar">
+                        <input type="text" id="playerSearch" class="search-input" placeholder="Search player by name...">
+                        <button class="search-btn" onclick="searchPlayer()">Search</button>
+                    </div>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="series" onclick="setFilter(this)">Series Total</button>
+                        <button class="filter-btn" data-filter="event_1" onclick="setFilter(this)">Event 1 Only</button>
+                        <button class="filter-btn" data-filter="knockouts" onclick="setFilter(this)">Knockouts Only</button>
+                    </div>
+                </div>
+                <div id="playerCardContainer"></div>
+            </div>
+        </div>
+
+        <!-- Knockout Brackets View -->
+        <div id="bracketsView" class="view-content">
+            <div class="section">
+                <h2 class="section-title">🎯 Knockout Brackets</h2>
+                <select id="bracketEventSelect" class="search-input" style="width: auto;" onchange="loadBracket()">
+                    <option value="">Select Event...</option>
+                </select>
+                <div id="bracketContainer" style="margin-top: 2rem;">
+                    <!-- Dynamic bracket content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://yppxkvbmffcvdxuswsbf.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_U9kl9y_4_VOJyN8Mij6jnQ_A4Ilgziq';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentFilter = 'series';
+
+        // Initialize
+        async function init() {
+            await loadLeaderboard();
+            await loadEventsList();
+            await loadBrandSponsors();
+        }
+
+        // View Navigation
+        function showView(viewName) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.view-content').forEach(view => view.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(viewName + 'View').classList.add('active');
+        }
+
+        // Load Series Leaderboard
+        async function loadLeaderboard() {
+            try {
+                const { data, error } = await supabase
+                    .from('series_leaderboard')
+                    .select(`
+                        *,
+                        players (name)
+                    `)
+                    .order('overall_rank', { ascending: true });
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('leaderboardBody');
+                tbody.innerHTML = data.map((entry, index) => {
+                    const rank = index + 1;
+                    const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                    
+                    return `
+                        <tr onclick="loadPlayerCard('${entry.player_id}')">
+                            <td class="rank ${rankClass}">${rank}</td>
+                            <td>${entry.players.name}</td>
+                            <td>${entry.total_events_played}</td>
+                            <td>${entry.total_wins}</td>
+                            <td>${entry.total_matches_played}</td>
+                            <td>${entry.total_match_wins}/${entry.total_match_losses}</td>
+                            <td>${entry.leg_difference > 0 ? '+' : ''}${entry.leg_difference}</td>
+                            <td>${entry.overall_3da?.toFixed(2) || '0.00'}</td>
+                            <td>${entry.rr_only_3da?.toFixed(2) || '0.00'}</td>
+                            <td>${entry.ko_only_3da?.toFixed(2) || '0.00'}</td>
+                            <td>${entry.total_180s}</td>
+                            <td>${entry.highest_checkout}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+            }
+        }
+
+        // Load Events List
+        async function loadEventsList() {
+            try {
+                const { data, error } = await supabase
+                    .from('events')
+                    .select('*')
+                    .order('event_number');
+
+                if (error) throw error;
+
+                const eventSelect = document.getElementById('eventSelect');
+                const bracketSelect = document.getElementById('bracketEventSelect');
+                
+                const options = data.map(event => 
+                    `<option value="${event.id}">Event ${event.event_number}: ${event.event_name}</option>`
+                ).join('');
+
+                eventSelect.innerHTML = '<option value="">Select an event...</option>' + options;
+                bracketSelect.innerHTML = '<option value="">Select an event...</option>' + options;
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+
+        // Load Event Standings
+        async function loadEventStandings() {
+            const eventId = document.getElementById('eventSelect').value;
+            if (!eventId) {
+                document.getElementById('eventStandingsContainer').style.display = 'none';
+                return;
+            }
+
+            try {
+                const { data: event } = await supabase
+                    .from('events')
+                    .select('*')
+                    .eq('id', eventId)
+                    .single();
+
+                const { data: standings, error } = await supabase
+                    .from('event_standings')
+                    .select(`
+                        *,
+                        players (name)
+                    `)
+                    .eq('event_id', eventId)
+                    .order('rank', { ascending: true });
+
+                if (error) throw error;
+
+                document.getElementById('eventTitle').textContent = `Event ${event.event_number}: ${event.event_name}`;
+                document.getElementById('eventStandingsContainer').style.display = 'block';
+
+                // Group A
+                const groupA = standings.filter(s => s.group_name === 'A');
+                document.getElementById('groupABody').innerHTML = groupA.map((player, index) => `
+                    <tr>
+                        <td class="rank">${index + 1}</td>
+                        <td>${player.players.name}</td>
+                        <td>${player.wins}</td>
+                        <td>${player.losses}</td>
+                        <td>${player.leg_difference > 0 ? '+' : ''}${player.leg_difference}</td>
+                        <td>${player.average_3da?.toFixed(2) || '0.00'}</td>
+                    </tr>
+                `).join('');
+
+                // Group B
+                const groupB = standings.filter(s => s.group_name === 'B');
+                document.getElementById('groupBBody').innerHTML = groupB.map((player, index) => `
+                    <tr>
+                        <td class="rank">${index + 1}</td>
+                        <td>${player.players.name}</td>
+                        <td>${player.wins}</td>
+                        <td>${player.losses}</td>
+                        <td>${player.leg_difference > 0 ? '+' : ''}${player.leg_difference}</td>
+                        <td>${player.average_3da?.toFixed(2) || '0.00'}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading event standings:', error);
+            }
+        }
+
+        // Player Search
+        async function searchPlayer() {
+            const searchTerm = document.getElementById('playerSearch').value.trim();
+            if (!searchTerm) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('players')
+                    .select('*')
+                    .ilike('name', `%${searchTerm}%`)
+                    .limit(1)
+                    .single();
+
+                if (error) throw error;
+
+                await loadPlayerCard(data.id);
+            } catch (error) {
+                console.error('Error searching player:', error);
+                alert('Player not found');
+            }
+        }
+
+        // Load Player Card
+        async function loadPlayerCard(playerId) {
+            try {
+                const { data, error } = await supabase.rpc('get_player_stats', {
+                    p_player_id: playerId,
+                    p_filter: currentFilter
+                });
+
+                if (error) throw error;
+
+                const stats = data[0];
+                const container = document.getElementById('playerCardContainer');
+                
+                container.innerHTML = `
+                    <div class="player-card">
+                        <div class="player-header">
+                            <div class="player-name">${stats.player_name}</div>
+                        </div>
+                        <div class="player-stats-grid">
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.total_matches}</div>
+                                <div class="stat-label">Total Matches</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.total_wins}</div>
+                                <div class="stat-label">Wins</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.total_losses}</div>
+                                <div class="stat-label">Losses</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.average_3da?.toFixed(2) || '0.00'}</div>
+                                <div class="stat-label">3-Dart Average</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.leg_difference > 0 ? '+' : ''}${stats.leg_difference}</div>
+                                <div class="stat-label">Leg Difference</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.total_180s}</div>
+                                <div class="stat-label">180s</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.highest_checkout}</div>
+                                <div class="stat-label">Highest Checkout</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading player card:', error);
+            }
+        }
+
+        // Filter Selection
+        function setFilter(btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+        }
+
+        // Load Knockout Bracket
+        async function loadBracket() {
+            const eventId = document.getElementById('bracketEventSelect').value;
+            if (!eventId) return;
+
+            try {
+                const { data, error } = await supabase.rpc('get_knockout_bracket', {
+                    p_event_id: eventId
+                });
+
+                if (error) throw error;
+
+                const quarters = data.filter(m => m.round === 'quarterfinal');
+                const semis = data.filter(m => m.round === 'semifinal');
+                const finals = data.filter(m => m.round === 'final');
+
+                const container = document.getElementById('bracketContainer');
+                container.innerHTML = `
+                    <div class="bracket">
+                        ${renderBracketRound('Quarter Finals', quarters)}
+                        ${renderBracketRound('Semi Finals', semis)}
+                        ${renderBracketRound('Final', finals)}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading bracket:', error);
+            }
+        }
+
+        function renderBracketRound(title, matches) {
+            if (!matches || matches.length === 0) return '';
+            
+            return `
+                <div class="bracket-round">
+                    <div class="round-title">${title}</div>
+                    ${matches.map(match => `
+                        <div class="match-card">
+                            <div class="match-player ${match.winner_name === match.player_1_name ? 'winner' : ''}">
+                                <span>${match.player_1_name}</span>
+                                <span>${match.player_1_score}</span>
+                            </div>
+                            <div class="match-player ${match.winner_name === match.player_2_name ? 'winner' : ''}">
+                                <span>${match.player_2_name}</span>
+                                <span>${match.player_2_score}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Load Brand Sponsors (if stored in DB)
+        async function loadBrandSponsors() {
+            try {
+                const { data, error } = await supabase
+                    .from('brand_sponsors')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('display_order');
+
+                if (error) throw error;
+
+                // Update sponsor sections dynamically if needed
+            } catch (error) {
+                console.error('Error loading sponsors:', error);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

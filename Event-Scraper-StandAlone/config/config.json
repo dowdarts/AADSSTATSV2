@@ -1,0 +1,34 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "debug": true,
+    "cors_enabled": true
+  },
+  "scraper": {
+    "use_selenium": true,
+    "delay_between_requests_ms": 200,
+    "max_retries": 3,
+    "timeout_seconds": 30,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  },
+  "data": {
+    "base_dir": "data",
+    "event_data_dir": "data/event_data",
+    "backup_enabled": true,
+    "backup_interval_hours": 24
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(levelname)s - %(message)s",
+    "file": "logs/scraper.log",
+    "console": true
+  },
+  "chrome_driver": {
+    "headless": true,
+    "window_size": "1920,1080",
+    "no_sandbox": true,
+    "disable_dev_shm_usage": true,
+    "disable_gpu": true
+  }
+}

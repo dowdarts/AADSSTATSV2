@@ -1,0 +1,42 @@
+{
+  "name": "aads-display-app",
+  "version": "1.0.8",
+  "description": "Standalone AADS Statistics Display - Portable leaderboard and statistics viewer",
+  "main": "index.html",
+  "keywords": [
+    "darts",
+    "statistics",
+    "leaderboard",
+    "aads",
+    "display",
+    "overlay",
+    "obs",
+    "streaming"
+  ],
+  "author": "AADS Development Team",
+  "license": "Proprietary",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dowdarts/aadsstatsscrapper"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "start": "echo 'Open index.html in your browser'",
+    "serve": "python -m http.server 8080",
+    "serve-node": "npx http-server -p 8080 -o"
+  },
+  "browser": {
+    "supabase": "https://unpkg.com/@supabase/supabase-js@2"
+  },
+  "files": [
+    "index.html",
+    "embed-example.html",
+    "config.js",
+    "assets/**/*",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
