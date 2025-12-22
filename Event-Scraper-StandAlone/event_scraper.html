@@ -295,6 +295,60 @@
             gap: 15px;
             flex-wrap: wrap;
         }
+
+        .standings-table {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .standings-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .standings-table th {
+            background: rgba(233, 69, 96, 0.2);
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85em;
+            border-bottom: 2px solid #e94560;
+        }
+
+        .standings-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9em;
+        }
+
+        .standings-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .standings-table .pos {
+            width: 40px;
+            text-align: center;
+            font-weight: bold;
+            color: #ff9800;
+        }
+
+        .standings-table .player {
+            font-weight: 500;
+        }
+
+        .standings-table .stat {
+            text-align: center;
+            width: 50px;
+        }
+
+        .standings-table .positive {
+            color: #4caf50;
+        }
+
+        .standings-table .negative {
+            color: #f44336;
+        }
     </style>
 </head>
 <body>
@@ -428,6 +482,36 @@
 
             <div class="matches-list" id="matchesList"></div>
 
+            <!-- Stage 1 Actions (shown after scraping) -->
+            <div id="stage1Actions" style="display: none; margin-top: 20px;">
+                <div class="button-group">
+                    <button id="downloadStage1Btn" style="background: #4caf50;">
+                        <span>💾</span>
+                        <span>Download Stage 1 Results</span>
+                    </button>
+                    <button id="pushStage1Btn" style="background: #ff9800;">
+                        <span>🚀</span>
+                        <span>Push Stage 1 to Admin</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Standings Tables (shown after Stage 1) -->
+            <div id="standingsContainer" style="display: none; margin-top: 30px;">
+                <h3 style="color: #e94560; margin-bottom: 20px; text-align: center;">📊 Group Standings</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <h4 style="color: #ff9800; margin-bottom: 15px; text-align: center;">Group A</h4>
+                        <div id="groupAStandings" class="standings-table"></div>
+                    </div>
+                    <div>
+                        <h4 style="color: #ff9800; margin-bottom: 15px; text-align: center;">Group B</h4>
+                        <div id="groupBStandings" class="standings-table"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="log-container" id="logContainer"></div>
         </div>
 
@@ -458,6 +542,20 @@
                     <span>🔬</span>
                     <span>Scrape Match Details (Stage 2)</span>
                 </button>
+            </div>
+
+            <!-- Stage 2 Actions (shown after scraping) -->
+            <div id="stage2Actions" style="display: none; margin-top: 20px;">
+                <div class="button-group">
+                    <button id="downloadStage2DataBtn" style="background: #4caf50;">
+                        <span>💾</span>
+                        <span>Download Stage 2 Details</span>
+                    </button>
+                    <button id="pushStage2Btn" style="background: #ff9800;">
+                        <span>🚀</span>
+                        <span>Push Stage 2 to Admin</span>
+                    </button>
+                </div>
             </div>
 
             <div class="log-container" id="logContainerStage2"></div>
@@ -564,6 +662,15 @@
         const playersAddedEl = document.getElementById('playersAdded');
         const logContainer = document.getElementById('logContainer');
         const logContainerStage2 = document.getElementById('logContainerStage2');
+        const downloadStage1Btn = document.getElementById('downloadStage1Btn');
+        const pushStage1Btn = document.getElementById('pushStage1Btn');
+        const stage1Actions = document.getElementById('stage1Actions');
+        const standingsContainer = document.getElementById('standingsContainer');
+        const groupAStandings = document.getElementById('groupAStandings');
+        const groupBStandings = document.getElementById('groupBStandings');
+        const downloadStage2DataBtn = document.getElementById('downloadStage2DataBtn');
+        const pushStage2Btn = document.getElementById('pushStage2Btn');
+        const stage2Actions = document.getElementById('stage2Actions');
         const matchDetailsFound = document.getElementById('matchDetailsFound');
         const matchDetailsScraped = document.getElementById('matchDetailsScraped');
         
@@ -648,6 +755,14 @@
         uploadStage2Btn.addEventListener('click', () => stage2FileInput.click());
         stage2FileInput.addEventListener('change', handleStage2Upload);
         downloadStage2Btn.addEventListener('click', downloadStage2Data);
+
+        // Stage 1 Actions
+        downloadStage1Btn.addEventListener('click', downloadStage1Results);
+        pushStage1Btn.addEventListener('click', pushStage1ToAdmin);
+
+        // Stage 2 Actions
+        downloadStage2DataBtn.addEventListener('click', downloadStage2Details);
+        pushStage2Btn.addEventListener('click', pushStage2ToAdmin);
 
         async function findMatches() {
             const eventUrl = eventUrlInput.value.trim();
@@ -772,7 +887,17 @@
 
         async function scrapeMatchResults() {
             if (foundMatches.length === 0) {
-                alert('No matches to scrape');
+                alert('No matches to scrape. Please click "Find Matches" first.');
+                return;
+            }
+
+            if (!currentEventId) {
+                alert('Event ID is missing. Please click "Find Matches" again.');
+                return;
+            }
+
+            if (!selectedEventNumber) {
+                alert('Event number is missing. Please select an event number.');
                 return;
             }
 
@@ -784,6 +909,7 @@
             matchResults = []; // Clear previous results
 
             addLog(`Starting Stage 1: Scraping match results for Event ${selectedEventNumber}...`, 'info');
+            addLog(`Event ID: ${currentEventId}, Matches: ${foundMatches.length}`, 'info');
 
             for (let i = 0; i < foundMatches.length; i++) {
                 const match = foundMatches[i];
@@ -793,16 +919,20 @@
                 statusEl.textContent = 'Scraping Results...';
                 statusEl.className = 'match-status status-scraping';
                 
+                // Debug logging
+                const payload = {
+                    recap_url: match.url,
+                    event_id: currentEventId,
+                    event_number: selectedEventNumber,
+                    match_index: i
+                };
+                console.log(`Match ${i + 1} payload:`, payload);
+                
                 try {
                     const response = await fetch(`${API_BASE}/scrape_match_result`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            recap_url: match.url,
-                            event_id: currentEventId,
-                            event_number: selectedEventNumber,
-                            match_index: i
-                        })
+                        body: JSON.stringify(payload)
                     });
 
                     const data = await response.json();
@@ -834,13 +964,17 @@
                         statusEl.textContent = '✗ Failed';
                         statusEl.className = 'match-status status-error';
                         
-                        addLog(`Match ${i + 1}/${foundMatches.length}: ${data.error}`, 'error');
+                        const errorMsg = data.error || 'Unknown error';
+                        addLog(`Match ${i + 1}/${foundMatches.length}: ERROR - ${errorMsg}`, 'error');
+                        console.error(`Match ${i + 1} error:`, data);
                     }
                 } catch (error) {
                     statusEl.textContent = '✗ Error';
                     statusEl.className = 'match-status status-error';
                     
-                    addLog(`Match ${i + 1}/${foundMatches.length}: Network error`, 'error');
+                    const errorMsg = error.message || 'Network error';
+                    addLog(`Match ${i + 1}/${foundMatches.length}: NETWORK ERROR - ${errorMsg}`, 'error');
+                    console.error(`Match ${i + 1} network error:`, error);
                 }
 
                 // Update progress
@@ -858,6 +992,12 @@
             }
 
             addLog(`Stage 1 complete: ${scraped}/${foundMatches.length} match results scraped`, 'success');
+            
+            // Calculate and display standings
+            if (matchResults.length > 0) {
+                calculateAndDisplayStandings();
+                stage1Actions.style.display = 'block';
+            }
             
             // Show Stage 2 card
             if (matchResults.length > 0) {
@@ -940,6 +1080,7 @@
                 stage2Stats = mergeMatchData();
                 populateReviewTable();
                 step4Card.style.display = 'block';
+                stage2Actions.style.display = 'block';
                 addLog('All data scraped. Review in Step 4 before sending to admin panel', 'success', logContainerStage2);
             }
             
@@ -977,6 +1118,231 @@
                     };
                 }
             });
+        }
+
+        // Calculate and display group standings from Stage 1 results
+        function calculateAndDisplayStandings() {
+            // Group A: Matches 8-17 (indices 7-16)
+            // Group B: Matches 18-27 (indices 17-26)
+            const groupAMatches = matchResults.filter(m => m.group === 'Group A');
+            const groupBMatches = matchResults.filter(m => m.group === 'Group B');
+            
+            const groupAStandingsData = calculateGroupStandings(groupAMatches);
+            const groupBStandingsData = calculateGroupStandings(groupBMatches);
+            
+            displayStandingsTable(groupAStandings, groupAStandingsData);
+            displayStandingsTable(groupBStandings, groupBStandingsData);
+            
+            standingsContainer.style.display = 'block';
+            addLog('Group standings calculated - review before proceeding to Stage 2', 'info');
+        }
+
+        function calculateGroupStandings(matches) {
+            const standings = {};
+            
+            // Process each match
+            matches.forEach(match => {
+                const [p1Score, p2Score] = match.score.split('-').map(s => parseInt(s.trim()));
+                
+                // Initialize players if not exists
+                if (!standings[match.player1]) {
+                    standings[match.player1] = { name: match.player1, played: 0, wins: 0, losses: 0, legsFor: 0, legsAgainst: 0 };
+                }
+                if (!standings[match.player2]) {
+                    standings[match.player2] = { name: match.player2, played: 0, wins: 0, losses: 0, legsFor: 0, legsAgainst: 0 };
+                }
+                
+                // Update stats
+                standings[match.player1].played++;
+                standings[match.player2].played++;
+                standings[match.player1].legsFor += p1Score;
+                standings[match.player1].legsAgainst += p2Score;
+                standings[match.player2].legsFor += p2Score;
+                standings[match.player2].legsAgainst += p1Score;
+                
+                if (match.winner === match.player1) {
+                    standings[match.player1].wins++;
+                    standings[match.player2].losses++;
+                } else {
+                    standings[match.player2].wins++;
+                    standings[match.player1].losses++;
+                }
+            });
+            
+            // Convert to array and calculate leg difference
+            const standingsArray = Object.values(standings).map(p => ({
+                ...p,
+                legDiff: p.legsFor - p.legsAgainst
+            }));
+            
+            // Sort by leg difference (descending)
+            standingsArray.sort((a, b) => b.legDiff - a.legDiff);
+            
+            return standingsArray;
+        }
+
+        function displayStandingsTable(container, standings) {
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="pos">Pos</th>
+                            <th class="player">Player</th>
+                            <th class="stat">P</th>
+                            <th class="stat">W</th>
+                            <th class="stat">L</th>
+                            <th class="stat">LF</th>
+                            <th class="stat">LA</th>
+                            <th class="stat">+/-</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${standings.map((player, idx) => `
+                            <tr>
+                                <td class="pos">${idx + 1}</td>
+                                <td class="player">${player.name}</td>
+                                <td class="stat">${player.played}</td>
+                                <td class="stat">${player.wins}</td>
+                                <td class="stat">${player.losses}</td>
+                                <td class="stat">${player.legsFor}</td>
+                                <td class="stat">${player.legsAgainst}</td>
+                                <td class="stat ${player.legDiff > 0 ? 'positive' : player.legDiff < 0 ? 'negative' : ''}">${player.legDiff > 0 ? '+' : ''}${player.legDiff}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+        }
+
+        // Download Stage 1 results as JSON
+        function downloadStage1Results() {
+            const data = {
+                event_number: selectedEventNumber,
+                event_id: currentEventId,
+                scraped_at: new Date().toISOString(),
+                total_matches: matchResults.length,
+                matches: matchResults
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `event${selectedEventNumber}_stage1_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            addLog('Stage 1 results downloaded successfully', 'success');
+        }
+
+        // Push Stage 1 results to admin panel
+        async function pushStage1ToAdmin() {
+            if (matchResults.length === 0) {
+                alert('No Stage 1 results to push');
+                return;
+            }
+            
+            const data = {
+                event_number: selectedEventNumber,
+                event_id: currentEventId,
+                stage: 1,
+                scraped_at: new Date().toISOString(),
+                total_matches: matchResults.length,
+                matches: matchResults
+            };
+            
+            try {
+                pushStage1Btn.disabled = true;
+                addLog('Pushing Stage 1 results to admin panel...', 'info');
+                
+                const response = await fetch(`${API_BASE}/push_to_admin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLog('✓ Stage 1 results pushed to admin panel successfully', 'success');
+                    alert('✅ Stage 1 results sent to admin panel for review!');
+                } else {
+                    addLog(`✗ Push failed: ${result.error}`, 'error');
+                    alert(`Failed to push: ${result.error}`);
+                }
+            } catch (error) {
+                addLog(`✗ Network error: ${error.message}`, 'error');
+                alert(`Network error: ${error.message}`);
+            } finally {
+                pushStage1Btn.disabled = false;
+            }
+        }
+
+        // Download Stage 2 detailed stats as JSON
+        function downloadStage2Details() {
+            const mergedData = mergeMatchData();
+            const data = {
+                event_number: selectedEventNumber,
+                event_id: currentEventId,
+                scraped_at: new Date().toISOString(),
+                total_matches: mergedData.length,
+                stats: mergedData
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `event${selectedEventNumber}_stage2_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            addLog('Stage 2 detailed stats downloaded successfully', 'success', logContainerStage2);
+        }
+
+        // Push Stage 2 detailed stats to admin panel
+        async function pushStage2ToAdmin() {
+            if (matchDetails.length === 0) {
+                alert('No Stage 2 details to push');
+                return;
+            }
+            
+            const mergedData = mergeMatchData();
+            const data = {
+                event_number: selectedEventNumber,
+                event_id: currentEventId,
+                stage: 2,
+                scraped_at: new Date().toISOString(),
+                total_matches: mergedData.length,
+                stats: mergedData
+            };
+            
+            try {
+                pushStage2Btn.disabled = true;
+                addLog('Pushing Stage 2 detailed stats to admin panel...', 'info', logContainerStage2);
+                
+                const response = await fetch(`${API_BASE}/push_to_admin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLog('✓ Stage 2 stats pushed to admin panel successfully', 'success', logContainerStage2);
+                    alert('✅ Stage 2 detailed stats sent to admin panel for review!');
+                } else {
+                    addLog(`✗ Push failed: ${result.error}`, 'error', logContainerStage2);
+                    alert(`Failed to push: ${result.error}`);
+                }
+            } catch (error) {
+                addLog(`✗ Network error: ${error.message}`, 'error', logContainerStage2);
+                alert(`Network error: ${error.message}`);
+            } finally {
+                pushStage2Btn.disabled = false;
+            }
         }
 
         async function scrapeAllMatches() {

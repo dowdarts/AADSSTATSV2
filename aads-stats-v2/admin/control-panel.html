@@ -394,6 +394,7 @@
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab active" onclick="switchTab('staging')">Staging Queue</button>
+            <button class="tab" onclick="switchTab('upload')">Upload Data</button>
             <button class="tab" onclick="switchTab('matches')">Published Matches</button>
             <button class="tab" onclick="switchTab('players')">Players</button>
             <button class="tab" onclick="switchTab('events')">Events</button>
@@ -423,6 +424,46 @@
                             <!-- Dynamic content -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Data Tab -->
+        <div id="uploadTab" class="tab-content">
+            <div class="section">
+                <div class="section-title">📤 Upload Scraped Data</div>
+                <p style="margin-bottom: 20px; opacity: 0.8;">
+                    Upload JSON files downloaded from the Event Scraper (Stage 1 or Stage 2 data) for review before publishing.
+                </p>
+                
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 15px; color: var(--accent-color);">Upload Stage 1 (Match Results)</h3>
+                    <input type="file" id="uploadStage1File" accept=".json" style="display: none;">
+                    <button class="btn btn-primary" onclick="document.getElementById('uploadStage1File').click()">
+                        📁 Choose Stage 1 JSON File
+                    </button>
+                    <div id="stage1PreviewContainer" style="margin-top: 20px; display: none;">
+                        <h4 style="color: var(--warning-color); margin-bottom: 10px;">Preview:</h4>
+                        <div id="stage1Preview" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
+                        <button class="btn btn-success" onclick="publishStage1Data()" style="margin-top: 15px;">
+                            ✅ Publish to Staging
+                        </button>
+                    </div>
+                </div>
+
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px;">
+                    <h3 style="margin-bottom: 15px; color: var(--accent-color);">Upload Stage 2 (Detailed Stats)</h3>
+                    <input type="file" id="uploadStage2File" accept=".json" style="display: none;">
+                    <button class="btn btn-primary" onclick="document.getElementById('uploadStage2File').click()">
+                        📁 Choose Stage 2 JSON File
+                    </button>
+                    <div id="stage2PreviewContainer" style="margin-top: 20px; display: none;">
+                        <h4 style="color: var(--warning-color); margin-bottom: 10px;">Preview:</h4>
+                        <div id="stage2Preview" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
+                        <button class="btn btn-success" onclick="publishStage2Data()" style="margin-top: 15px;">
+                            ✅ Publish to Production
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -884,8 +925,129 @@
             alert('Add Event modal - To be implemented');
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
-</body>
-</html>
+        // File Upload Handlers
+        let stage1Data = null;
+        let stage2Data = null;
+
+        document.getElementById('uploadStage1File').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                stage1Data = JSON.parse(text);
+                
+                // Show preview
+                const previewContainer = document.getElementById('stage1PreviewContainer');
+                const preview = document.getElementById('stage1Preview');
+                
+                preview.innerHTML = `
+                    <p><strong>Event Number:</strong> ${stage1Data.event_number}</p>
+                    <p><strong>Total Matches:</strong> ${stage1Data.total_matches}</p>
+                    <p><strong>Scraped At:</strong> ${new Date(stage1Data.scraped_at).toLocaleString()}</p>
+                    <p><strong>First Match:</strong> ${stage1Data.matches[0]?.player1} vs ${stage1Data.matches[0]?.player2}</p>
+                `;
+                
+                previewContainer.style.display = 'block';
+                showAlert('Stage 1 file loaded successfully', 'success');
+            } catch (error) {
+                showAlert('Error reading file: ' + error.message, 'danger');
+            }
+        });
+
+        document.getElementById('uploadStage2File').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                stage2Data = JSON.parse(text);
+                
+                // Show preview
+                const previewContainer = document.getElementById('stage2PreviewContainer');
+                const preview = document.getElementById('stage2Preview');
+                
+                preview.innerHTML = `
+                    <p><strong>Event Number:</strong> ${stage2Data.event_number}</p>
+                    <p><strong>Total Matches:</strong> ${stage2Data.total_matches}</p>
+                    <p><strong>Scraped At:</strong> ${new Date(stage2Data.scraped_at).toLocaleString()}</p>
+                    <p><strong>Total Players:</strong> ${stage2Data.stats.reduce((sum, match) => sum + match.players_added, 0)}</p>
+                `;
+                
+                previewContainer.style.display = 'block';
+                showAlert('Stage 2 file loaded successfully', 'success');
+            } catch (error) {
+                showAlert('Error reading file: ' + error.message, 'danger');
+            }
+        });
+
+        async function publishStage1Data() {
+            if (!stage1Data) {
+                showAlert('No data loaded', 'danger');
+                return;
+            }
+
+            if (!confirm(`Publish ${stage1Data.total_matches} matches to staging?`)) {
+                return;
+            }
+
+            try {
+                // Insert matches into staging table
+                for (const match of stage1Data.matches) {
+                    const { error } = await supabase
+                        .from('staging_matches')
+                        .insert({
+                            event_number: stage1Data.event_number,
+                            match_title: match.match_title,
+                            match_url: match.match_url,
+                            match_number: match.match_number,
+                            player1: match.player1,
+                            player2: match.player2,
+                            score: match.score,
+                            winner: match.winner,
+                            phase: match.phase,
+                            group: match.group,
+                            status: 'pending'
+                        });
+
+                    if (error) throw error;
+                }
+
+                showAlert(`Successfully published ${stage1Data.total_matches} matches to staging`, 'success');
+                stage1Data = null;
+                document.getElementById('stage1PreviewContainer').style.display = 'none';
+                document.getElementById('uploadStage1File').value = '';
+                await loadStagingData();
+                await loadStats();
+            } catch (error) {
+                console.error('Error publishing:', error);
+                showAlert('Error publishing data: ' + error.message, 'danger');
+            }
+        }
+
+        async function publishStage2Data() {
+            if (!stage2Data) {
+                showAlert('No data loaded', 'danger');
+                return;
+            }
+
+            if (!confirm(`Publish ${stage2Data.total_matches} matches with detailed stats to production?`)) {
+                return;
+            }
+
+            try {
+                // This would insert into production tables
+                // For now, just show success
+                showAlert('Stage 2 publish functionality - To be implemented with full stats', 'warning');
+                
+                // TODO: Implement full production publishing with:
+                // - Player stats (3DA, legs, 180s, checkouts)
+                // - Match details (sets, legs per set)
+                // - Update player totals
+                
+            } catch (error) {
+                console.error('Error publishing:', error);
+                showAlert('Error publishing data: ' + error.message, 'danger');
+            }
+        }
+

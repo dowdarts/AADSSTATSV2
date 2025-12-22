@@ -378,6 +378,41 @@ def health_check():
     })
 
 
+@app.route('/api/push_to_admin', methods=['POST'])
+def push_to_admin():
+    """Receive scraped data from scraper and save for admin review"""
+    try:
+        data = request.json
+        event_number = data.get('event_number')
+        stage = data.get('stage', 1)  # 1 = match results, 2 = detailed stats
+        
+        if not event_number:
+            return jsonify({'success': False, 'error': 'event_number is required'}), 400
+        
+        # Save to pending review folder
+        review_dir = os.path.join('data', 'pending_review')
+        os.makedirs(review_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'event{event_number}_stage{stage}_{timestamp}.json'
+        filepath = os.path.join(review_dir, filename)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+        
+        logger.info(f"Data pushed to admin panel: {filepath}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Stage {stage} data saved for admin review',
+            'filename': filename
+        })
+        
+    except Exception as e:
+        logger.error(f"Error pushing to admin: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     logger.info("=" * 50)
     logger.info("Event Scraper API Server Starting")
