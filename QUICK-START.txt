@@ -1,0 +1,101 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║                                                                       ║
+║        AADS STATS V2 - QUICK START GUIDE                             ║
+║        Atlantic Amateur Darts Series                                 ║
+║                                                                       ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+SIMPLE 4-STEP WORKFLOW:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  📁 STEP 1: Double-click → 1-START-SERVER.bat
+     ├─ Starts the API server (keep this window open!)
+     ├─ Server runs on http://localhost:5000
+     └─ You'll see: "Running on http://127.0.0.1:5000"
+
+  ⏱️  Wait 10 seconds for server to fully start
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  📁 STEP 2: Double-click → 2-EVENT-SCRAPER.bat
+     ├─ Opens Event Scraper in browser
+     ├─ Select Event Number (1-6)
+     ├─ Enter DartConnect URL
+     ├─ Click "Find Matches" (finds all 27 matches)
+     ├─ Click "Scrape Match Results" (Stage 1 - Quick)
+     ├─ Click "Scrape Match Details" (Stage 2 - Detailed)
+     └─ Click "Send to Admin Control Panel"
+
+  ⏱️  Time: ~8-10 minutes for 27 matches
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  📁 STEP 3: Double-click → 3-ADMIN-PANEL.bat
+     ├─ Opens Admin Control Panel in browser
+     ├─ Review all scraped data in staging table
+     ├─ Click any cell to edit (fix typos, correct stats)
+     ├─ Click "✓ Approve" to publish to production
+     └─ Click "✗ Reject" to delete
+
+  ⏱️  Time: ~2-5 minutes to review
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  📁 STEP 4: Double-click → 4-VIEW-STATS.bat
+     ├─ Opens Professional Stats Display
+     ├─ View: Leaderboards, Event Standings, Champions
+     ├─ Public-facing professional display
+     └─ This is what fans/players will see
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPORTANT NOTES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ⚠️  STEP 1 (Server) must ALWAYS run first!
+      Keep the server window open during Steps 2-4.
+
+  🔒 Steps 2-3 (Scraper & Admin) are LOCALHOST ONLY
+      Never share these publicly - admin tools only!
+
+  🌐 Step 4 (Stats Display) is safe to share
+      This is the public-facing stats page.
+
+  ❌ When finished: Close server window or press CTRL+C
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TROUBLESHOOTING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ❓ Server won't start?
+     → Install Python 3.8+: https://www.python.org/downloads/
+     → Run: pip install -r Event-Scraper-StandAlone/requirements.txt
+
+  ❓ "Connection refused" errors?
+     → Make sure STEP 1 (Server) is running
+     → Wait 10 seconds after starting server
+
+  ❓ Scraper can't find matches?
+     → Check DartConnect URL is correct
+     → URL should look like: dartconnect.com/history/event/eventid/...
+
+  ❓ Admin panel shows no data?
+     → Make sure you clicked "Send to Admin" in Step 2
+     → Check Supabase credentials in aads-stats-v2/.env
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NEED HELP?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  📖 Full Documentation: README.md
+  📖 User Guide: USER_GUIDE.md
+  📖 Scraping Guide: EVENT_BASED_SCRAPING_GUIDE.md
+
+  📧 Support: admin@aadsstats.com
+  🐙 GitHub: https://github.com/dowdarts/AADSSTATSV2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Version 2.0.1 | December 22, 2025
