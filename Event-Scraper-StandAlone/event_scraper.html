@@ -684,14 +684,6 @@
         const discardStatsBtn = document.getElementById('discardStatsBtn');
         const sendingLoading = document.getElementById('sendingLoading');
         
-        // Upload/Download buttons
-        const uploadStage1Btn = document.getElementById('uploadStage1Btn');
-        const stage1FileInput = document.getElementById('stage1FileInput');
-        const downloadStage1Btn = document.getElementById('downloadStage1Btn');
-        const uploadStage2Btn = document.getElementById('uploadStage2Btn');
-        const stage2FileInput = document.getElementById('stage2FileInput');
-        const downloadStage2Btn = document.getElementById('downloadStage2Btn');
-        
         // Stage 2 stats storage
         let stage2Stats = [];
 
@@ -746,15 +738,6 @@
         sendToAdminBtn.addEventListener('click', sendToAdminPanel);
         editStatsBtn.addEventListener('click', editStats);
         discardStatsBtn.addEventListener('click', discardStats);
-        
-        // Upload/Download event listeners
-        uploadStage1Btn.addEventListener('click', () => stage1FileInput.click());
-        stage1FileInput.addEventListener('change', handleStage1Upload);
-        downloadStage1Btn.addEventListener('click', downloadStage1Data);
-        
-        uploadStage2Btn.addEventListener('click', () => stage2FileInput.click());
-        stage2FileInput.addEventListener('change', handleStage2Upload);
-        downloadStage2Btn.addEventListener('click', downloadStage2Data);
 
         // Stage 1 Actions
         downloadStage1Btn.addEventListener('click', downloadStage1Results);
