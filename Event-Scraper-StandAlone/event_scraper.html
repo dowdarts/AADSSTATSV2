@@ -482,6 +482,8 @@
 
             <div class="matches-list" id="matchesList"></div>
 
+            <div class="log-container" id="logContainer"></div>
+
             <!-- Stage 1 Actions (shown after scraping) -->
             <div id="stage1Actions" style="display: none; margin-top: 20px;">
                 <div class="button-group">
@@ -511,8 +513,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="log-container" id="logContainer"></div>
         </div>
 
         <!-- Step 3: Scrape Match Details (Stage 2) -->
@@ -976,10 +976,12 @@
 
             addLog(`Stage 1 complete: ${scraped}/${foundMatches.length} match results scraped`, 'success');
             
+            // Always show Stage 1 actions
+            stage1Actions.style.display = 'block';
+            
             // Calculate and display standings
             if (matchResults.length > 0) {
                 calculateAndDisplayStandings();
-                stage1Actions.style.display = 'block';
             }
             
             // Show Stage 2 card
@@ -1105,10 +1107,21 @@
 
         // Calculate and display group standings from Stage 1 results
         function calculateAndDisplayStandings() {
+            console.log('calculateAndDisplayStandings called');
+            console.log('matchResults:', matchResults);
+            
             // Group A: Matches 8-17 (indices 7-16)
             // Group B: Matches 18-27 (indices 17-26)
             const groupAMatches = matchResults.filter(m => m.group === 'Group A');
             const groupBMatches = matchResults.filter(m => m.group === 'Group B');
+            
+            console.log('Group A matches:', groupAMatches.length, groupAMatches);
+            console.log('Group B matches:', groupBMatches.length, groupBMatches);
+            
+            if (groupAMatches.length === 0 && groupBMatches.length === 0) {
+                addLog('⚠️ No group matches found - standings table cannot be displayed', 'error');
+                return;
+            }
             
             const groupAStandingsData = calculateGroupStandings(groupAMatches);
             const groupBStandingsData = calculateGroupStandings(groupBMatches);
