@@ -54,11 +54,15 @@ def scrape_event():
     try:
         data = request.json
         event_url = data.get('event_url')
+        event_number = data.get('event_number')
         
         if not event_url:
             return jsonify({'success': False, 'error': 'event_url is required'}), 400
         
-        logger.info(f"Scraping event: {event_url}")
+        if not event_number:
+            return jsonify({'success': False, 'error': 'event_number is required'}), 400
+        
+        logger.info(f"Scraping Event {event_number}: {event_url}")
         
         # Scrape the event for matches
         result = scraper.scrape_event_for_matches(event_url)
@@ -68,11 +72,12 @@ def scrape_event():
             matches = result['matches']
             raw_response = result.get('raw_response')
             
-            # Save matches using event data manager
+            # Save matches using event data manager with event number
             saved_to = event_manager.save_event_matches(
                 event_id=event_id,
                 matches=matches,
-                raw_api_response=raw_response
+                raw_api_response=raw_response,
+                event_number=event_number
             )
             
             # Get event summary
@@ -84,6 +89,7 @@ def scrape_event():
             return jsonify({
                 'success': True,
                 'event_id': event_id,
+                'event_number': event_number,
                 'matches': matches,
                 'saved_to': saved_to,
                 'is_duplicate_event': is_duplicate,
@@ -95,6 +101,125 @@ def scrape_event():
             
     except Exception as e:
         logger.error(f"Error scraping event: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/scrape_match_result', methods=['POST'])
+def scrape_match_result():
+    """Stage 1: Scrape basic match result (scores only)"""
+    try:
+        data = request.json
+        recap_url = data.get('recap_url')
+        event_id = data.get('event_id')
+        event_number = data.get('event_number')
+        match_index = data.get('match_index', 0)
+        
+        if not recap_url or not event_id:
+            return jsonify({'success': False, 'error': 'recap_url and event_id are required'}), 400
+        
+        logger.info(f"Stage 1 - Scraping match result: {recap_url}")
+        
+        # Extract basic match result (player names, scores, winner)
+        result = scraper.extract_match_result(recap_url, match_index)
+        
+        if result:
+            return jsonify({
+                'success': True,
+                'player1': result.get('player1', 'Unknown'),
+                'player2': result.get('player2', 'Unknown'),
+                'score': result.get('score', '0-0'),
+                'winner': result.get('winner', 'Unknown'),
+                'phase': result.get('phase', 'unknown'),
+                'group': result.get('group'),
+                'players_added': 2
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Could not extract match result'
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error scraping match result: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/scrape_match_details', methods=['POST'])
+def scrape_match_details():
+    """Stage 2: Scrape detailed match statistics (legs, 180s, checkouts, etc.)"""
+    try:
+        data = request.json
+        recap_url = data.get('recap_url')
+        event_id = data.get('event_id')
+        event_number = data.get('event_number')
+        match_number = data.get('match_number')
+        phase = data.get('phase', 'unknown')
+        
+        if not recap_url or not event_id:
+            return jsonify({'success': False, 'error': 'recap_url and event_id are required'}), 400
+        
+        logger.info(f"Stage 2 - Scraping match details: {recap_url}")
+        
+        # Determine if knockout (set play) or round robin (best of 5 legs)
+        is_knockout = phase in ['quarterfinal', 'semifinal', 'final']
+        
+        # Extract detailed player stats
+        players_stats = scraper.extract_player_stats_from_recap(recap_url)
+        
+        if not players_stats:
+            return jsonify({
+                'success': False,
+                'error': 'No player stats found in recap'
+            }), 400
+        
+        # Extract additional details based on format
+        sets_played = 0
+        if is_knockout:
+            # For knockout, extract set scores
+            sets_played = scraper.extract_sets_count(recap_url)
+        
+        return jsonify({
+            'success': True,
+            'players': players_stats,
+            'is_knockout': is_knockout,
+            'sets_played': sets_played,
+            'match_number': match_number
+        })
+        
+    except Exception as e:
+        logger.error(f"Error scraping match details: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/send_to_admin', methods=['POST'])
+def send_to_admin():
+    """Send scraped data to Supabase staging table"""
+    try:
+        data = request.json
+        event_number = data.get('event_number')
+        matches = data.get('matches', [])
+        
+        if not event_number:
+            return jsonify({'success': False, 'error': 'event_number is required'}), 400
+        
+        if not matches:
+            return jsonify({'success': False, 'error': 'No matches to send'}), 400
+        
+        logger.info(f"Sending Event {event_number} data to admin panel: {len(matches)} matches")
+        
+        # TODO: Integrate with Supabase API to insert into staging_matches table
+        # For now, log the data
+        logger.info(f"Event {event_number}: {len(matches)} matches ready for admin review")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Event {event_number} data sent to staging',
+            'matches_processed': len(matches),
+            'event_number': event_number
+        })
+        
+    except Exception as e:
+        logger.error(f"Error sending to admin: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

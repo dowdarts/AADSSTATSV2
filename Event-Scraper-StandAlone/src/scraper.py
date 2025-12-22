@@ -1226,6 +1226,144 @@ class DartConnectScraper:
             self.logger.error(f"Error scraping single recap {recap_url}: {e}")
             return False
 
+    def extract_match_result(self, recap_url: str, match_index: int = 0) -> Optional[Dict[str, Any]]:
+        """
+        Stage 1 Scraping: Extract basic match result (player names, score, winner)
+        This is faster and gets the essential data without detailed stats
+        """
+        try:
+            self.logger.info(f"Extracting match result from: {recap_url}")
+            
+            # Get the page content
+            if self.use_selenium and SELENIUM_AVAILABLE:
+                html_content = self._get_page_with_selenium(recap_url)
+            else:
+                response = self.session.get(recap_url, timeout=30)
+                response.raise_for_status()
+                html_content = response.text
+            
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Extract player names
+            player_names = self._extract_player_names(soup)
+            
+            # Extract scores
+            scores = self._extract_match_scores(soup)
+            
+            # Determine winner
+            winner = 'Unknown'
+            score_str = '0-0'
+            if scores and len(scores) >= 2:
+                score1, score2 = scores[0], scores[1]
+                score_str = f"{score1}-{score2}"
+                if score1 > score2:
+                    winner = player_names[0] if len(player_names) > 0 else 'Unknown'
+                elif score2 > score1:
+                    winner = player_names[1] if len(player_names) > 1 else 'Unknown'
+            
+            # Determine phase and group based on match index
+            phase, group = self._classify_match_by_index(match_index)
+            
+            return {
+                'player1': player_names[0] if len(player_names) > 0 else 'Unknown',
+                'player2': player_names[1] if len(player_names) > 1 else 'Unknown',
+                'score': score_str,
+                'winner': winner,
+                'phase': phase,
+                'group': group
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting match result: {e}", exc_info=True)
+            return None
+
+    def extract_sets_count(self, recap_url: str) -> int:
+        """
+        Extract the number of sets played in a knockout match
+        Used for Stage 2 detailed scraping
+        """
+        try:
+            # Get the page content
+            if self.use_selenium and SELENIUM_AVAILABLE:
+                html_content = self._get_page_with_selenium(recap_url)
+            else:
+                response = self.session.get(recap_url, timeout=30)
+                response.raise_for_status()
+                html_content = response.text
+            
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Look for set indicators in the page
+            # This is a placeholder - actual implementation depends on DartConnect's HTML structure
+            set_headers = soup.find_all(text=re.compile(r'Set\s+\d+', re.IGNORECASE))
+            return len(set_headers) if set_headers else 0
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting sets count: {e}")
+            return 0
+
+    def _extract_player_names(self, soup: BeautifulSoup) -> List[str]:
+        """Extract player names from recap page"""
+        player_names = []
+        
+        # Try common selectors for player names
+        name_selectors = [
+            {'class': 'player-name'},
+            {'class': 'playerName'},
+            {'class': 'participant'},
+        ]
+        
+        for selector in name_selectors:
+            elements = soup.find_all(attrs=selector)
+            if elements:
+                player_names = [elem.get_text(strip=True) for elem in elements[:2]]
+                break
+        
+        return player_names
+
+    def _extract_match_scores(self, soup: BeautifulSoup) -> List[int]:
+        """Extract match scores from recap page"""
+        scores = []
+        
+        # Try common selectors for scores
+        score_selectors = [
+            {'class': 'score'},
+            {'class': 'match-score'},
+            {'class': 'legs-won'},
+        ]
+        
+        for selector in score_selectors:
+            elements = soup.find_all(attrs=selector)
+            if elements:
+                for elem in elements[:2]:
+                    try:
+                        scores.append(int(elem.get_text(strip=True)))
+                    except ValueError:
+                        continue
+                break
+        
+        return scores
+
+    def _classify_match_by_index(self, match_index: int) -> Tuple[str, Optional[str]]:
+        """
+        Classify match phase and group based on match index
+        Reuses the logic from scrape_event_for_matches
+        """
+        match_counter = match_index + 1
+        
+        if match_counter == 1:
+            return 'final', None
+        elif match_counter <= 3:
+            return 'semifinal', None
+        elif match_counter <= 7:
+            return 'quarterfinal', None
+        elif match_counter <= 17:
+            return 'round_robin', 'A'
+        elif match_counter <= 27:
+            return 'round_robin', 'B'
+        else:
+            return 'unknown', None
+
 def test_scraper():
     """Test function for the scraper"""
     # Initialize database and scraper
