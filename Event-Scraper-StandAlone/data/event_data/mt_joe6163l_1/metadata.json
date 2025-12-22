@@ -1,0 +1,15 @@
+{
+  "event_id": "mt_joe6163l_1",
+  "created_at": "20251222_164421",
+  "match_count": 27,
+  "round_robin_count": 20,
+  "knockout_count": 7,
+  "last_updated": "20251222_164421",
+  "status": "matches_found",
+  "files": {
+    "raw_api_response": "api_response_20251222_164421.json",
+    "matches_json": "matches_20251222_164421.json",
+    "matches_csv": "matches_20251222_164421.csv",
+    "match_urls": "match_urls.txt"
+  }
+}

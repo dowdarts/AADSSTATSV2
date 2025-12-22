@@ -411,6 +411,79 @@
 
             <div class="log-container" id="logContainer"></div>
         </div>
+
+        <!-- Step 3: Review Stats Before Sending -->
+        <div class="card" id="step3Card" style="display: none;">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <div class="step-title">Review Stats Before Sending to Admin Panel</div>
+            </div>
+
+            <div class="stats-summary">
+                <div class="stat-box">
+                    <div class="stat-value" id="totalMatchesReview">0</div>
+                    <div class="stat-label">Total Matches</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalPlayersReview">0</div>
+                    <div class="stat-label">Total Players</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="avgPlayerAverage">0.00</div>
+                    <div class="stat-label">Avg 3DA</div>
+                </div>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <p style="color: #a8a8a8; font-size: 0.9em;">
+                    ⚠️ Review all player statistics below before sending to the admin control panel. 
+                    This is your last chance to verify data accuracy.
+                </p>
+            </div>
+
+            <div style="overflow-x: auto; margin: 20px 0;">
+                <table style="width: 100%; border-collapse: collapse; background: rgba(0,0,0,0.3);">
+                    <thead>
+                        <tr style="background: rgba(233, 69, 96, 0.2); border-bottom: 2px solid #e94560;">
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">Match #</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">Player Name</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">3DA</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Legs</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">180s</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Highest CO</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Doubles</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Result</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Phase</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsReviewTableBody">
+                        <!-- Stats will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="button-group" style="margin-top: 30px;">
+                <button id="sendToAdminBtn" style="background: #4caf50; font-size: 1.1em; padding: 15px 30px;">
+                    <span>✓</span>
+                    <span>Send to Admin Control Panel (Staging)</span>
+                </button>
+                <button id="editStatsBtn" style="background: #ff9800;">
+                    <span>✏️</span>
+                    <span>Edit Stats</span>
+                </button>
+                <button id="discardStatsBtn" style="background: #f44336;">
+                    <span>✗</span>
+                    <span>Discard All</span>
+                </button>
+            </div>
+
+            <div id="sendingLoading" class="hidden" style="margin-top: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; color: #4caf50;">
+                    <div class="spinner"></div>
+                    <span>Sending to Supabase staging table...</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -423,6 +496,7 @@
         const findMatchesBtn = document.getElementById('findMatchesBtn');
         const findMatchesLoading = document.getElementById('findMatchesLoading');
         const step2Card = document.getElementById('step2Card');
+        const step3Card = document.getElementById('step3Card');
         const matchesList = document.getElementById('matchesList');
         const scrapeAllBtn = document.getElementById('scrapeAllBtn');
         const resetBtn = document.getElementById('resetBtn');
@@ -432,6 +506,16 @@
         const matchesScrapedEl = document.getElementById('matchesScraped');
         const playersAddedEl = document.getElementById('playersAdded');
         const logContainer = document.getElementById('logContainer');
+        
+        // Step 3 elements
+        const statsReviewTableBody = document.getElementById('statsReviewTableBody');
+        const totalMatchesReview = document.getElementById('totalMatchesReview');
+        const totalPlayersReview = document.getElementById('totalPlayersReview');
+        const avgPlayerAverage = document.getElementById('avgPlayerAverage');
+        const sendToAdminBtn = document.getElementById('sendToAdminBtn');
+        const editStatsBtn = document.getElementById('editStatsBtn');
+        const discardStatsBtn = document.getElementById('discardStatsBtn');
+        const sendingLoading = document.getElementById('sendingLoading');
         
         // Upload/Download buttons
         const uploadStage1Btn = document.getElementById('uploadStage1Btn');
@@ -491,6 +575,9 @@
         findMatchesBtn.addEventListener('click', findMatches);
         scrapeAllBtn.addEventListener('click', scrapeAllMatches);
         resetBtn.addEventListener('click', reset);
+        sendToAdminBtn.addEventListener('click', sendToAdminPanel);
+        editStatsBtn.addEventListener('click', editStats);
+        discardStatsBtn.addEventListener('click', discardStats);
         
         // Upload/Download event listeners
         uploadStage1Btn.addEventListener('click', () => stage1FileInput.click());
@@ -696,6 +783,11 @@
             if (stage2Stats.length > 0) {
                 downloadStage2Btn.classList.remove('hidden');
                 addLog('Stage 2 data ready for download', 'info');
+                
+                // Populate review table
+                populateReviewTable();
+                step3Card.style.display = 'block';
+                addLog('Review stats in Step 3 before sending to admin panel', 'info');
             }
             
             scrapeAllBtn.disabled = false;
@@ -727,17 +819,162 @@
             currentEventId = '';
             stage2Stats = [];
             step2Card.style.display = 'none';
+            step3Card.style.display = 'none';
             matchesList.innerHTML = '';
             logContainer.innerHTML = '';
+            statsReviewTableBody.innerHTML = '';
             progressFill.style.width = '0%';
             progressText.textContent = '0%';
             matchesFoundEl.textContent = '0';
             matchesScrapedEl.textContent = '0';
             playersAddedEl.textContent = '0';
+            totalMatchesReview.textContent = '0';
+            totalPlayersReview.textContent = '0';
+            avgPlayerAverage.textContent = '0.00';
             downloadStage1Btn.classList.add('hidden');
             downloadStage2Btn.classList.add('hidden');
             
             addLog('Reset complete', 'info');
+        }
+        
+        // ========== STEP 3: REVIEW TABLE FUNCTIONS ==========
+        
+        function populateReviewTable() {
+            statsReviewTableBody.innerHTML = '';
+            
+            let totalPlayers = 0;
+            let totalAverage = 0;
+            let playerCount = 0;
+            
+            stage2Stats.forEach((matchData, index) => {
+                if (!matchData.players || matchData.players.length === 0) {
+                    return;
+                }
+                
+                const matchNumber = index + 1;
+                
+                matchData.players.forEach(player => {
+                    totalPlayers++;
+                    
+                    // Parse player stats
+                    const playerName = player.player_name || 'Unknown';
+                    const avg3Dart = parseFloat(player['3_dart_average'] || player.three_dart_avg || 0);
+                    const legsPlayed = parseInt(player.legs_played || 0);
+                    const count180s = parseInt(player['180s'] || player.count_180s || 0);
+                    const highestCheckout = parseInt(player.highest_checkout || 0);
+                    const doublesHit = parseInt(player.doubles_hit || 0);
+                    const doublesAttempted = parseInt(player.doubles_attempted || 0);
+                    const doublesPercent = doublesAttempted > 0 ? ((doublesHit / doublesAttempted) * 100).toFixed(1) : '0.0';
+                    const matchWon = player.match_won ? 'Won' : 'Lost';
+                    const phase = player.phase || matchData.phase || 'Unknown';
+                    
+                    if (avg3Dart > 0) {
+                        totalAverage += avg3Dart;
+                        playerCount++;
+                    }
+                    
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+                    row.innerHTML = `
+                        <td style="padding: 10px; text-align: left;">${matchNumber}</td>
+                        <td style="padding: 10px; text-align: left; font-weight: 600;">${playerName}</td>
+                        <td style="padding: 10px; text-align: center; color: #e94560; font-weight: 600;">${avg3Dart.toFixed(2)}</td>
+                        <td style="padding: 10px; text-align: center;">${legsPlayed}</td>
+                        <td style="padding: 10px; text-align: center; color: #ffd700;">${count180s}</td>
+                        <td style="padding: 10px; text-align: center; color: #4caf50;">${highestCheckout}</td>
+                        <td style="padding: 10px; text-align: center;">${doublesHit}/${doublesAttempted} (${doublesPercent}%)</td>
+                        <td style="padding: 10px; text-align: center; ${matchWon === 'Won' ? 'color: #4caf50;' : 'color: #f44336;'}">${matchWon}</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: rgba(33, 150, 243, 0.3); padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">${phase}</span></td>
+                    `;
+                    statsReviewTableBody.appendChild(row);
+                });
+            });
+            
+            // Update summary stats
+            totalMatchesReview.textContent = stage2Stats.length;
+            totalPlayersReview.textContent = totalPlayers;
+            avgPlayerAverage.textContent = playerCount > 0 ? (totalAverage / playerCount).toFixed(2) : '0.00';
+            
+            addLog(`Review table populated: ${stage2Stats.length} matches, ${totalPlayers} players`, 'success');
+        }
+        
+        async function sendToAdminPanel() {
+            if (stage2Stats.length === 0) {
+                alert('No stats to send. Please scrape matches first.');
+                return;
+            }
+            
+            const confirmed = confirm(`Send ${stage2Stats.length} matches with ${totalPlayersReview.textContent} players to Supabase staging table?\n\nThis will make the data available in the Admin Control Panel for review.`);
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            sendToAdminBtn.disabled = true;
+            sendingLoading.classList.remove('hidden');
+            addLog('Sending stats to Supabase staging table...', 'info');
+            
+            try {
+                // Here you would send to your Supabase staging table
+                // For now, we'll use the existing upload endpoint
+                const stage2Data = {
+                    version: '1.0',
+                    stage: 2,
+                    event_id: currentEventId,
+                    timestamp: new Date().toISOString(),
+                    stats: stage2Stats,
+                    total_matches: stage2Stats.length,
+                    total_players: parseInt(totalPlayersReview.textContent)
+                };
+                
+                const response = await fetch(`${API_BASE}/upload_stage2`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stage2Data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLog(`✓ Successfully sent to staging: ${result.matches_processed} matches, ${result.players_added} players`, 'success');
+                    alert(`✅ Success!\n\n${result.matches_processed} matches sent to Admin Control Panel.\n\nGo to the Admin Panel to review and approve these stats.`);
+                    
+                    // Reset after successful send
+                    setTimeout(() => {
+                        reset();
+                    }, 2000);
+                } else {
+                    addLog(`✗ Failed to send: ${result.error}`, 'error');
+                    alert('Error: ' + result.error);
+                }
+                
+            } catch (error) {
+                addLog(`✗ Network error: ${error.message}`, 'error');
+                alert('Network error: ' + error.message);
+            } finally {
+                sendToAdminBtn.disabled = false;
+                sendingLoading.classList.add('hidden');
+            }
+        }
+        
+        function editStats() {
+            alert('📝 Edit functionality coming soon!\n\nFor now, you can:\n1. Discard and re-scrape\n2. Download Stage 2 data and edit the JSON file\n3. Upload the edited JSON file');
+        }
+        
+        function discardStats() {
+            const confirmed = confirm('Are you sure you want to discard all scraped stats?\n\nThis will clear the review table and you will need to scrape again.');
+            
+            if (confirmed) {
+                stage2Stats = [];
+                statsReviewTableBody.innerHTML = '';
+                step3Card.style.display = 'none';
+                totalMatchesReview.textContent = '0';
+                totalPlayersReview.textContent = '0';
+                avgPlayerAverage.textContent = '0.00';
+                downloadStage2Btn.classList.add('hidden');
+                
+                addLog('Stats discarded. Scrape again to generate new data.', 'info');
+            }
         }
         
         // ========== STAGE 1 DOWNLOAD/UPLOAD ==========
@@ -890,6 +1127,11 @@
                             stage2Stats = data.stats;
                             currentEventId = data.event_id || 'Uploaded_Event';
                             downloadStage2Btn.classList.remove('hidden');
+                            
+                            // Populate review table
+                            populateReviewTable();
+                            step3Card.style.display = 'block';
+                            addLog('Review table populated from uploaded data', 'success');
                             
                         } else {
                             addLog(`✗ Upload failed: ${result.error}`, 'error');
