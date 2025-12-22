@@ -69,13 +69,14 @@ class EventDataManager:
             self.logger.error(f"Error loading existing matches: {e}")
             return []
     
-    def save_event_matches(self, event_id: str, matches: List[Dict], raw_api_response: Dict = None) -> str:
+    def save_event_matches(self, event_id: str, matches: List[Dict], raw_api_response: Dict = None, event_number: int = None) -> str:
         """Save event matches in multiple formats
         
         Args:
             event_id: Event identifier (e.g., 'mt_joe6163l_1' or 'Event_1')
             matches: List of match dictionaries with 'url' and 'title'
             raw_api_response: Optional raw API response to save
+            event_number: Optional event number (1-7)
             
         Returns:
             Path to the event directory

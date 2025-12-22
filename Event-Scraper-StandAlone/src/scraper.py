@@ -166,7 +166,6 @@ class DartConnectScraper:
             
             # Initialize Selenium driver if not already done
             log_step("[2/8] Initializing Selenium WebDriver...")
-            log_step("[2/8] Initializing Selenium WebDriver...")
             self._init_selenium_driver()
             
             if not self.driver:
