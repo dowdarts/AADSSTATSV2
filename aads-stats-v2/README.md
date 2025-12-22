@@ -4,11 +4,30 @@
 
 The AADS Stats Engine V2 is a professional statistics platform for the Atlantic Amateur Darts Series. It features:
 
-- ✅ **Staging Control Panel** - Review and approve scraped data before publishing
-- 🎯 **Professional Frontend** - Player cards, leaderboards, event standings, knockout brackets
+- ✅ **Staging Control Panel** (Localhost Only) - Review and approve scraped data before publishing
+- 🎯 **Public Frontend** (GitHub Pages) - Live stats display at https://dowdarts.github.io/AADSSTATSV2/
 - 🔒 **Secure Backend** - Supabase with Row Level Security
 - 📊 **Advanced Tournament Logic** - Ranking algorithms, seeding, bracket generation
 - 🔄 **Data Migration** - Seamless flow from scraper to production
+
+## 🌐 Deployment Architecture
+
+### **Admin Control Panel** - Localhost Only ❌
+- **URL**: `http://localhost:8001`
+- **Purpose**: Review and approve scraped data
+- **Security**: NEVER deploy publicly
+
+### **Event Scraper** - Localhost Only ❌
+- **URL**: `http://localhost:5000`
+- **Purpose**: Scrape event data and send to staging
+- **Security**: NEVER deploy publicly
+
+### **Public Display** - GitHub Pages ✅
+- **URL**: https://dowdarts.github.io/AADSSTATSV2/
+- **Purpose**: Public statistics display
+- **Embedding**: Safe to embed on aadsdarts.com
+
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for complete deployment instructions.
 
 ## 🚀 Quick Start
 
